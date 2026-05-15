@@ -1,12 +1,18 @@
 import type { Repositories } from '../infrastructure/repositories'
-import { TodoService } from './todo.service'
+import { CollectionService } from './todo.service'
+import { DesignService } from './design.service'
+import { ShapeService } from './shape.service'
 
 export type Services = {
-  todoService: TodoService
+  collectionService: CollectionService
+  designService: DesignService
+  shapeService: ShapeService
 }
 
 export const createServices = (repositories: Repositories): Services => {
   return {
-    todoService: new TodoService(repositories.todoRepository),
+    collectionService: new CollectionService(repositories.collectionRepository),
+    designService: new DesignService(repositories.designRepository),
+    shapeService: new ShapeService(repositories.shapeRepository),
   }
 }

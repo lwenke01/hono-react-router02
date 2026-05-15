@@ -7,9 +7,11 @@ assets = { directory = "./build/client/" }
 
 [[d1_databases]]
 binding = "DB"
-database_name = "<your-database-name>"
-database_id = "<your-database-id>"
+database_name = "vendula-bags-db"
+database_id = "47e3b618-2d95-47a6-9a4b-16f6d9197d86"
 migrations_dir = "database/drizzle"
 
 [observability.logs]
 enabled = true
+
+

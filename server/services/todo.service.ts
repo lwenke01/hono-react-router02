@@ -1,22 +1,22 @@
-import type { todos } from '../../database/schema'
-import type { Todo } from '../../database/schema/todo'
-import type { TodoRepository } from '../infrastructure/todo.repository'
+import type { collections } from '../../database/schema'
+import type { Collection } from '../../database/schema/collection'
+import type { CollectionRepository } from '../infrastructure/todo.repository'
 
-export class TodoService {
-  constructor(private readonly todoRepository: TodoRepository) {}
+export class CollectionService {
+  constructor(private readonly collectionRepository: CollectionRepository) {}
 
-  async create(todo: typeof todos.$inferInsert): Promise<Todo> {
+  async create(collection: typeof collections.$inferInsert): Promise<Collection> {
     // Add business logic here (validation, transformation, etc.)
-    return this.todoRepository.create(todo)
+    return this.collectionRepository.create(collection)
   }
 
-  async findAll(): Promise<Todo[]> {
+  async findAll(): Promise<Collection[]> {
     // Add business logic here (validation, transformation, etc.)
-    return this.todoRepository.findAll()
+    return this.collectionRepository.findAll()
   }
 
-  async delete(id: string): Promise<Todo> {
+  async delete(id: number): Promise<Collection> {
     // Add business logic here (validation, transformation, etc.)
-    return this.todoRepository.delete(id)
+    return this.collectionRepository.delete(id)
   }
 }
