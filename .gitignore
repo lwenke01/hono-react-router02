@@ -15,7 +15,7 @@
 
 # Dev
 .dev.vars
-.env
+.env1
 .vscode
 .tool-versions
 .claude/

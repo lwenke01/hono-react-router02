@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react'
-import { useLoaderData } from 'react-router'
+import { useLoaderData, Link } from 'react-router'
 import type { Route } from './+types/home'
 
 export function meta(_: Route.MetaArgs) {
@@ -21,6 +21,7 @@ export default function Home() {
 
   const [search, setSearch] = useState('')
   const [season, setSeason] = useState<string | null>(null)
+  const [series, setSeries] = useState<string | null>(null)
 
   // Ensure we always have arrays
   const cols = Array.isArray(collections) ? collections : []
@@ -81,14 +82,15 @@ export default function Home() {
   }, [cols, designsByCollection])
 
   const seasons = Array.from(new Set(enriched.map((c: any) => c.season).filter(Boolean)))
+  const seriesList = Array.from(new Set(enriched.map((c: any) => c.series).filter(Boolean)))
 
   const filtered = enriched
     .filter((c: any) => {
       if (season && c.season !== season) return false
+      if (series && c.series !== series) return false
       if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false
       return true
     })
-    .slice(0, 20)
 
   return (
     <main className="flex min-h-screen items-start justify-center p-8">
@@ -118,6 +120,20 @@ export default function Home() {
                 ))}
               </select>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Filter by series</label>
+              <select
+                value={series ?? ''}
+                onChange={(e) => setSeries(e.target.value || null)}
+                className="w-full rounded border px-3 py-2"
+              >
+                <option value="">All series</option>
+                {seriesList.map((s: any) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </aside>
 
@@ -129,18 +145,50 @@ export default function Home() {
             ) : (
               filtered.map((col: any) => (
                 <li key={col.id} className="border rounded-lg overflow-hidden bg-white shadow-sm">
-                  <div className="h-48 w-full bg-gray-100 flex items-center justify-center overflow-hidden">
-                    {col._thumbnail ? (
-                      <img src={col._thumbnail} alt={col.name} className="object-cover h-full w-full" />
-                    ) : (
-                      <div className="text-sm text-gray-500">No image</div>
-                    )}
-                  </div>
+                  <Link to={`/collections/${col.id}`} className="block">
+                    <div className="h-48 w-full bg-gray-100 flex items-center justify-center overflow-hidden">
+                      {col._thumbnail ? (
+                        <img src={col._thumbnail} alt={col.name} className="object-cover h-full w-full" />
+                      ) : (
+                        <div className="text-sm text-gray-500">No image</div>
+                      )}
+                    </div>
+                  </Link>
                   <div className="p-4">
                     <div className="flex items-center justify-between">
-                      <h2 className="text-lg font-semibold">{col.name}</h2>
-                      <span className="text-sm text-gray-600">{col.season}</span>
+                      <h2 className="text-lg font-semibold"><Link to={`/collections/${col.id}`} className="text-current">{col.name}</Link></h2>
+                      <div className="text-sm text-gray-600 text-right">
+                        <div>{col.series}</div>
+                        <div>{col.season}</div>
+                      </div>
                     </div>
+
+                    {(() => {
+                      const ds = designsByCollection.get(col.id) || []
+                      if (!Array.isArray(ds) || ds.length === 0) return null
+                      return (
+                        <div className="mt-3 space-y-2">
+                          <div className="flex gap-2">
+                            {ds.slice(0, 3).map((d: any, i: number) => {
+                              try {
+                                const imgs = typeof d.image_urls === 'string' ? JSON.parse(d.image_urls) : d.image_urls
+                                const src = Array.isArray(imgs) && imgs.length > 0 ? imgs[0] : null
+                                return src ? <img key={i} src={src} alt={`design-${i}`} className="h-12 w-12 object-cover rounded" /> : null
+                              } catch { return null }
+                            })}
+                          </div>
+                          <ul className="text-sm text-gray-700">
+                            {ds.map((d: any) => (
+                              <li key={d.id} className="flex items-center justify-between">
+                                <span>{d.name}</span>
+                                <span className="text-gray-500">{d.price ? `$${d.price}` : ''}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )
+                    })()}
+
                   </div>
                 </li>
               ))
