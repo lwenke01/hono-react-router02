@@ -10,6 +10,13 @@ export const collectionsGet = F.createHandlers(async (c) => {
 })
 
 export const collectionsPost = F.createHandlers(async (c) => {
+  // require admin
+  const auth = c.get('auth')
+  const session = auth ? await auth.api.getSession({ headers: c.req.raw.headers }) : null
+  const admins = (c.env.BETTER_AUTH_ADMINS || '').split(',').map((s: string) => s.trim()).filter(Boolean)
+  if (!session) return c.json({ error: 'Unauthorized' }, 401)
+  if (admins.length > 0 && !admins.includes(session.user.email)) return c.json({ error: 'Forbidden' }, 403)
+
   const collection = await c.req.json()
   const validatedCollection = collectionInsertSchema.safeParse(collection)
   if (!validatedCollection.success) {
@@ -22,6 +29,12 @@ export const collectionsPost = F.createHandlers(async (c) => {
 })
 
 export const collectionsDelete = F.createHandlers(async (c) => {
+  const auth = c.get('auth')
+  const session = auth ? await auth.api.getSession({ headers: c.req.raw.headers }) : null
+  const admins = (c.env.BETTER_AUTH_ADMINS || '').split(',').map((s: string) => s.trim()).filter(Boolean)
+  if (!session) return c.json({ error: 'Unauthorized' }, 401)
+  if (admins.length > 0 && !admins.includes(session.user.email)) return c.json({ error: 'Forbidden' }, 403)
+
   const id = Number(c.req.param('id'))
   if (!id && id !== 0) {
     return c.json({ error: 'id is required' }, 400)

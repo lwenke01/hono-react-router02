@@ -10,6 +10,12 @@ export const designsGet = F.createHandlers(async (c) => {
 })
 
 export const designsPost = F.createHandlers(async (c) => {
+  const auth = c.get('auth')
+  const session = auth ? await auth.api.getSession({ headers: c.req.raw.headers }) : null
+  const admins = (c.env.BETTER_AUTH_ADMINS || '').split(',').map((s: string) => s.trim()).filter(Boolean)
+  if (!session) return c.json({ error: 'Unauthorized' }, 401)
+  if (admins.length > 0 && !admins.includes(session.user.email)) return c.json({ error: 'Forbidden' }, 403)
+
   const design = await c.req.json()
   const validated = designInsertSchema.safeParse(design)
   if (!validated.success) return c.json({ error: validated.error }, 400)
@@ -20,6 +26,12 @@ export const designsPost = F.createHandlers(async (c) => {
 })
 
 export const designsDelete = F.createHandlers(async (c) => {
+  const auth = c.get('auth')
+  const session = auth ? await auth.api.getSession({ headers: c.req.raw.headers }) : null
+  const admins = (c.env.BETTER_AUTH_ADMINS || '').split(',').map((s: string) => s.trim()).filter(Boolean)
+  if (!session) return c.json({ error: 'Unauthorized' }, 401)
+  if (admins.length > 0 && !admins.includes(session.user.email)) return c.json({ error: 'Forbidden' }, 403)
+
   const id = Number(c.req.param('id'))
   if (!id && id !== 0) return c.json({ error: 'id is required' }, 400)
 

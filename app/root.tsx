@@ -3,6 +3,11 @@ import type { Route } from './+types/root'
 import stylesheet from './global.css?url'
 import { useSession, signOut } from './lib/auth-client'
 
+// Ensure admin route is discovered during dev so /admin works
+if (import.meta.env.DEV) {
+  import('/app/routes/admin.tsx').catch(() => {})
+}
+
 export const links: Route.LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
   {
@@ -52,12 +57,15 @@ export default function App() {
             </button>
           </div>
         ) : (
-          <Link
-            to="/sign-in"
-            className="cursor-pointer rounded border border-gray-300 bg-white px-3 py-1 text-sm text-gray-800 hover:bg-gray-100"
-          >
-            Sign In
-          </Link>
+          <>
+            <Link to="/admin" className="cursor-pointer rounded border border-gray-300 bg-white px-3 py-1 text-sm text-gray-800 hover:bg-gray-100 mr-2">Admin</Link>
+            <Link
+              to="/sign-in"
+              className="cursor-pointer rounded border border-gray-300 bg-white px-3 py-1 text-sm text-gray-800 hover:bg-gray-100"
+            >
+              Sign In
+            </Link>
+          </>
         )}
       </header>
       <main>

@@ -40,11 +40,32 @@ export const setHandlers = (app: Hono<HonoENV>) => {
   apiHandler.get('/collections/:id', ...vendulaCollectionById)
   apiHandler.post('/collections', ...vendulaCollectionsPost)
   apiHandler.put('/collections/:id', ...vendulaCollectionsPut)
+  apiHandler.delete('/collections/:id', ...collectionsDelete)
+
   apiHandler.get('/designs', ...designsGet)
   apiHandler.post('/designs', ...vendulaDesignsPost)
   apiHandler.put('/designs/:id', ...vendulaDesignsPut)
+  apiHandler.delete('/designs/:id', ...designsDelete)
+
   apiHandler.get('/shapes', ...vendulaShapesGet)
   apiHandler.post('/shapes', ...vendulaShapesPost)
+  apiHandler.delete('/shapes/:id', ...shapesDelete)
+
+  // Quick dev-only admin page: render the admin component directly (protected)
+  app.get('/admin', async (c) => {
+    const auth = c.get('auth')
+    const session = auth ? await auth.api.getSession({ headers: c.req.raw.headers }) : null
+    const admins = (c.env.BETTER_AUTH_ADMINS || '').split(',').map((s: string) => s.trim()).filter(Boolean)
+    if (!session) {
+      return c.redirect('/sign-in')
+    }
+    if (admins.length > 0 && !admins.includes(session.user.email)) {
+      return c.text('Forbidden', 403)
+    }
+
+    const html = `<!doctype html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><link rel="stylesheet" href="/app/global.css"/></head><body><div id="root"></div><script type="module">import React from '/node_modules/react/index.js';import { createRoot } from '/node_modules/react-dom/client.js';import Admin from '/app/routes/admin.tsx';createRoot(document.getElementById('root')).render(React.createElement(Admin));</script></body></html>`
+    return c.html(html)
+  })
 
   app.route('/api', apiHandler)
   return app
