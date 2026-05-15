@@ -1,17 +1,21 @@
-workers_dev = true
 name = "hono-react-router"
+workers_dev = true
 compatibility_date = "2024-11-18"
 compatibility_flags = ["nodejs_compat"]
 main = "./worker.ts"
 assets = { directory = "./build/client/" }
+preview_urls = false
 
 [[d1_databases]]
 binding = "DB"
 database_name = "vendula-bags-db"
 database_id = "47e3b618-2d95-47a6-9a4b-16f6d9197d86"
 migrations_dir = "database/drizzle"
+remote = true
 
 [observability.logs]
 enabled = true
 
-
+[vars]
+DEV = "true"
+BETTER_AUTH_URL = "http://localhost:5173"

@@ -8,10 +8,14 @@ export function meta(_: Route.MetaArgs) {
 
 export const loader = async ({ request }: { request: Request }) => {
   const origin = new URL(request.url).origin
-  const [collections, designs] = await Promise.all([
-    fetch(new URL('/api/collections', origin).toString()).then((r) => r.json()),
-    fetch(new URL('/api/designs', origin).toString()).then((r) => r.json()),
+
+  const [collectionsRes, designsRes] = await Promise.all([
+    fetch(new URL('/api/collections', origin).toString()),
+    fetch(new URL('/api/designs', origin).toString()),
   ])
+
+  const collections = collectionsRes.ok ? await collectionsRes.json() : []
+  const designs = designsRes.ok ? await designsRes.json() : []
 
   return { collections, designs }
 }
@@ -22,13 +26,11 @@ export default function Home() {
   const [search, setSearch] = useState('')
   const [season, setSeason] = useState<string | null>(null)
 
-  // Ensure we always have arrays
   const cols = Array.isArray(collections) ? collections : []
   const des = Array.isArray(designs) ? designs : []
 
-  // Group designs by collection_id
   const designsByCollection = useMemo(() => {
-    const map = new Map<number | string, typeof des>()
+    const map = new Map<number | string, any[]>()
     for (const d of des) {
       const key = d.collection_id
       if (!map.has(key)) map.set(key, [])
@@ -37,32 +39,26 @@ export default function Home() {
     return map
   }, [des])
 
-  // Enrich collections with thumbnails
   const enriched = useMemo(() => {
     return cols.map((c: any) => {
       let img: string | null = null
 
-      // Try collection.image_urls first
       if (c.image_urls) {
         try {
-          const imgs = typeof c.image_urls === 'string'
-            ? JSON.parse(c.image_urls)
-            : c.image_urls
+          const imgs =
+            typeof c.image_urls === 'string' ? JSON.parse(c.image_urls) : c.image_urls
 
           if (Array.isArray(imgs) && imgs.length > 0) {
             img = imgs[0]
           }
-        } catch {
-          // ignore
-        }
+        } catch {}
       }
 
-      // If no image, try first design of this collection
       if (!img) {
         const ds = designsByCollection.get(c.id)
         if (Array.isArray(ds) && ds.length > 0) {
           try {
-            const di: any =
+            const di =
               typeof ds[0].image_urls === 'string'
                 ? JSON.parse(ds[0].image_urls)
                 : ds[0].image_urls
@@ -70,9 +66,7 @@ export default function Home() {
             if (Array.isArray(di) && di.length > 0) {
               img = di[0]
             }
-          } catch {
-            // ignore
-          }
+          } catch {}
         }
       }
 
@@ -106,7 +100,9 @@ export default function Home() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Filter by season</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Filter by season
+              </label>
               <select
                 value={season ?? ''}
                 onChange={(e) => setSeason(e.target.value || null)}
@@ -114,7 +110,9 @@ export default function Home() {
               >
                 <option value="">All seasons</option>
                 {seasons.map((s) => (
-                  <option key={s} value={s}>{s}</option>
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
                 ))}
               </select>
             </div>
