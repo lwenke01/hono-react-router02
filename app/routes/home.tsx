@@ -1,72 +1,94 @@
-import React, { useEffect, useState } from 'react'
-import { data } from 'react-router'
+import React, { useState, useMemo } from 'react'
+import { useLoaderData } from 'react-router'
 import type { Route } from './+types/home'
 
 export function meta(_: Route.MetaArgs) {
   return [{ title: 'Collections' }, { name: 'description', content: 'Top collections' }]
 }
 
-export const loader = async (_: Route.LoaderArgs) => {
-  return data({})
+export const loader = async ({ request }: { request: Request }) => {
+  const origin = new URL(request.url).origin
+  const [collections, designs] = await Promise.all([
+    fetch(new URL('/api/collections', origin).toString()).then((r) => r.json()),
+    fetch(new URL('/api/designs', origin).toString()).then((r) => r.json()),
+  ])
+
+  return { collections, designs }
 }
 
-export default function Home(_: Route.ComponentProps) {
-  const [collections, setCollections] = useState<any[]>([])
+export default function Home() {
+  const { collections, designs } = useLoaderData<typeof loader>()
+
   const [search, setSearch] = useState('')
   const [season, setSeason] = useState<string | null>(null)
 
-  useEffect(() => {
-    let mounted = true
-    Promise.all([
-      fetch('/api/collections').then((r) => r.json()),
-      fetch('/api/designs').then((r) => r.json()),
-    ])
-      .then(([cols, designs]) => {
-        if (!mounted) return
-        const designsByCollection = new Map()
-        if (Array.isArray(designs)) {
-          for (const d of designs) {
-            if (!designsByCollection.has(d.collection_id)) designsByCollection.set(d.collection_id, [])
-            designsByCollection.get(d.collection_id).push(d)
+  // Ensure we always have arrays
+  const cols = Array.isArray(collections) ? collections : []
+  const des = Array.isArray(designs) ? designs : []
+
+  // Group designs by collection_id
+  const designsByCollection = useMemo(() => {
+    const map = new Map<number | string, typeof des>()
+    for (const d of des) {
+      const key = d.collection_id
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(d)
+    }
+    return map
+  }, [des])
+
+  // Enrich collections with thumbnails
+  const enriched = useMemo(() => {
+    return cols.map((c: any) => {
+      let img: string | null = null
+
+      // Try collection.image_urls first
+      if (c.image_urls) {
+        try {
+          const imgs = typeof c.image_urls === 'string'
+            ? JSON.parse(c.image_urls)
+            : c.image_urls
+
+          if (Array.isArray(imgs) && imgs.length > 0) {
+            img = imgs[0]
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      // If no image, try first design of this collection
+      if (!img) {
+        const ds = designsByCollection.get(c.id)
+        if (Array.isArray(ds) && ds.length > 0) {
+          try {
+            const di: any =
+              typeof ds[0].image_urls === 'string'
+                ? JSON.parse(ds[0].image_urls)
+                : ds[0].image_urls
+
+            if (Array.isArray(di) && di.length > 0) {
+              img = di[0]
+            }
+          } catch {
+            // ignore
           }
         }
-        if (Array.isArray(cols)) {
-          // attach thumbnail and keep full set for filtering
-          const enriched = cols.map((c: any) => {
-            const imgs = c.image_urls ? (() => { try { return JSON.parse(c.image_urls) } catch { return null } })() : null
-            let img = imgs && Array.isArray(imgs) && imgs.length > 0 ? imgs[0] : null
-            if (!img) {
-              const ds = designsByCollection.get(c.id)
-              if (Array.isArray(ds) && ds.length > 0) {
-                try {
-                  const di = ds[0].image_urls ? JSON.parse(ds[0].image_urls) : null
-                  if (Array.isArray(di) && di.length > 0) img = di[0]
-                } catch {}
-              }
-            }
-            return { ...c, _thumbnail: img }
-          })
-          setCollections(enriched)
-        } else {
-          setCollections([])
-        }
-      })
-      .catch(() => {
-        if (mounted) setCollections([])
-      })
-    return () => {
-      mounted = false
-    }
-  }, [])
+      }
 
-  const seasons = Array.from(new Set(collections.map((c) => c.season).filter(Boolean)))
-  const filtered = collections
-    .filter((c) => {
+      return { ...c, _thumbnail: img }
+    })
+  }, [cols, designsByCollection])
+
+  const seasons = Array.from(new Set(enriched.map((c: any) => c.season).filter(Boolean)))
+
+  const filtered = enriched
+    .filter((c: any) => {
       if (season && c.season !== season) return false
       if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false
       return true
     })
-    .slice(0, 5)
+    .slice(0, 20)
 
   return (
     <main className="flex min-h-screen items-start justify-center p-8">
@@ -105,7 +127,7 @@ export default function Home(_: Route.ComponentProps) {
             {filtered.length === 0 ? (
               <li className="text-gray-500">No collections found</li>
             ) : (
-              filtered.map((col) => (
+              filtered.map((col: any) => (
                 <li key={col.id} className="border rounded-lg overflow-hidden bg-white shadow-sm">
                   <div className="h-48 w-full bg-gray-100 flex items-center justify-center overflow-hidden">
                     {col._thumbnail ? (

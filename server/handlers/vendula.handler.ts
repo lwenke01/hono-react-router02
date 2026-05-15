@@ -81,11 +81,10 @@ export const vendulaCollectionsGet = F.createHandlers(async (c) => {
     FROM Collections AS c
     ${whereClause}
     ORDER BY c.id DESC
-    LIMIT ?
+    LIMIT ${limit}
   `
 
-  params.push(limit)
-
+  // Execute query; params contains only season/q bindings (limit injected directly)
   const { results } = await c.env.DB.prepare(sql).all(...params)
 
   const cleaned = results.map((row: any) => {

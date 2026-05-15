@@ -36,14 +36,15 @@ export const setHandlers = (app: Hono<HonoENV>) => {
     allowHeaders: ['Content-Type', 'Authorization'],
   }))
 
-  apiHandler.get('/collections', vendulaCollectionsGet)
-  apiHandler.get('/collections/:id', vendulaCollectionById)
-  apiHandler.post('/collections', vendulaCollectionsPost)
-  apiHandler.put('/collections/:id', vendulaCollectionsPut)
-  apiHandler.post('/designs', vendulaDesignsPost)
-  apiHandler.put('/designs/:id', vendulaDesignsPut)
-  apiHandler.get('/shapes', vendulaShapesGet)
-  apiHandler.post('/shapes', vendulaShapesPost)
+  apiHandler.get('/collections', ...vendulaCollectionsGet)
+  apiHandler.get('/collections/:id', ...vendulaCollectionById)
+  apiHandler.post('/collections', ...vendulaCollectionsPost)
+  apiHandler.put('/collections/:id', ...vendulaCollectionsPut)
+  apiHandler.get('/designs', ...designsGet)
+  apiHandler.post('/designs', ...vendulaDesignsPost)
+  apiHandler.put('/designs/:id', ...vendulaDesignsPut)
+  apiHandler.get('/shapes', ...vendulaShapesGet)
+  apiHandler.post('/shapes', ...vendulaShapesPost)
 
   app.route('/api', apiHandler)
   return app
