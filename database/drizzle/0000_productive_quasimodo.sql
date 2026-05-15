@@ -28,10 +28,17 @@ CREATE TABLE `session` (
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `session_token_unique` ON `session` (`token`);--> statement-breakpoint
-CREATE TABLE `todos` (
-	`id` text PRIMARY KEY NOT NULL,
-	`title` text NOT NULL,
-	`description` text
+CREATE TABLE Collections (
+	id INTEGER PRIMARY KEY AUTOINCREMENT, 
+	name TEXT NOT NULL,
+	description TEXT,
+	season TEXT,
+	series TEXT, 
+	edition TEXT,
+	release_year INTEGER,
+	themes TEXT,
+	colours TEXT
+, "name_friendly" TEXT, "type" TEXT, "image_urls" TEXT, releaseDate TEXT, exclusive TEXT
 );
 --> statement-breakpoint
 CREATE TABLE `user` (
