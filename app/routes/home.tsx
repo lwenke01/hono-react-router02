@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react'
-import { useLoaderData } from 'react-router'
+import React, { useMemo, useState } from 'react'
+import { Link } from 'react-router'
 import type { Route } from './+types/home'
 
 export function meta(_: Route.MetaArgs) {
@@ -9,78 +9,73 @@ export function meta(_: Route.MetaArgs) {
   ]
 }
 
-export const loader = async ({ request }: { request: Request }) => {
-  const origin = new URL(request.url).origin
-
-  const [collectionsRes, designsRes] = await Promise.all([
-    fetch(new URL('/api/collections', origin).toString()),
-    fetch(new URL('/api/designs', origin).toString()),
-  ])
-
-  const collections = collectionsRes.ok ? await collectionsRes.json() : []
-  const designs = designsRes.ok ? await designsRes.json() : []
-
-  return { collections, designs }
+export async function clientLoader() {
+  const res = await fetch('/api/collections')
+  const collections = res.ok ? await res.json() : []
+  return { collections }
 }
 
-export default function Home() {
-  const { collections, designs } = useLoaderData<typeof loader>()
+export function HydrateFallback() {
+  return <div className="p-8">Loading...</div>
+}
+
+export default function Home({ loaderData }: Route.ComponentProps) {
+  const { collections } = loaderData
 
   const [search, setSearch] = useState('')
   const [season, setSeason] = useState<string | null>(null)
   const [series, setSeries] = useState<string | null>(null)
 
   const cols = Array.isArray(collections) ? collections : []
-  const des = Array.isArray(designs) ? designs : []
 
-  const designsByCollection = useMemo(() => {
-    const map = new Map<number | string, any[]>()
-    for (const d of des) {
-      const key = d.collection_id
-      if (!map.has(key)) map.set(key, [])
-      map.get(key)!.push(d)
-    }
-    return map
-  }, [des])
-
-  const enriched = useMemo(() => {
+  const normalized = useMemo(() => {
     return cols.map((c: any) => {
-      let img: string | null = null
+      const designs = Array.isArray(c.designs) ? c.designs : []
 
-      if (c.image_urls) {
+      let thumbnail: string | null = null
+      if (Array.isArray(c.image_urls) && c.image_urls.length > 0) {
+        thumbnail = c.image_urls[0]
+      } else if (typeof c.image_urls === 'string') {
         try {
-          const imgs =
-            typeof c.image_urls === 'string' ? JSON.parse(c.image_urls) : c.image_urls
-          if (Array.isArray(imgs) && imgs.length > 0) img = imgs[0]
+          const parsed = JSON.parse(c.image_urls)
+          if (Array.isArray(parsed) && parsed.length > 0) thumbnail = parsed[0]
         } catch {}
       }
 
-      if (!img) {
-        const ds = designsByCollection.get(c.id)
-        if (Array.isArray(ds) && ds.length > 0) {
-          try {
-            const di =
-              typeof ds[0].image_urls === 'string'
-                ? JSON.parse(ds[0].image_urls)
-                : ds[0].image_urls
-            if (Array.isArray(di) && di.length > 0) img = di[0]
-          } catch {}
-        }
+      return {
+        ...c,
+        _thumbnail: thumbnail,
+        _designs: designs,
       }
-
-      return { ...c, _thumbnail: img }
     })
-  }, [cols, designsByCollection])
+  }, [cols])
 
-  const seasons = Array.from(new Set(enriched.map((c: any) => c.season).filter(Boolean)))
-  const seriesList = Array.from(new Set(enriched.map((c: any) => c.series).filter(Boolean)))
+  const seasons = Array.from(new Set(normalized.map((c: any) => c.season).filter(Boolean)))
+  const seriesList = Array.from(new Set(normalized.map((c: any) => c.series).filter(Boolean)))
 
-  const filtered = enriched.filter((c: any) => {
-    if (season && c.season !== season) return false
-    if (series && c.series !== series) return false
-    if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false
-    return true
-  })
+  const filtered = normalized
+    .filter((c: any) => {
+      if (season && c.season !== season) return false
+      if (series && c.series !== series) return false
+      if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false
+      return true
+    })
+    .sort((a: any, b: any) => {
+      const yearA = Number(a.release_year ?? 0)
+      const yearB = Number(b.release_year ?? 0)
+      return yearB - yearA
+    })
+
+  const groupedByYear = useMemo(() => {
+    return filtered.reduce((acc: Record<string, any[]>, col: any) => {
+      const year = String(col.release_year ?? 'Unknown')
+      if (!acc[year]) acc[year] = []
+      acc[year].push(col)
+      return acc
+    }, {})
+  }, [filtered])
+
+  const years = Object.keys(groupedByYear).sort((a, b) => Number(b) - Number(a))
 
   return (
     <main className="flex min-h-screen items-start justify-center p-8">
@@ -98,9 +93,7 @@ export default function Home() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Filter by season
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Filter by season</label>
               <select
                 value={season ?? ''}
                 onChange={(e) => setSeason(e.target.value || null)}
@@ -108,17 +101,13 @@ export default function Home() {
               >
                 <option value="">All seasons</option>
                 {seasons.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
+                  <option key={s} value={s}>{s}</option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Filter by series
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Filter by series</label>
               <select
                 value={series ?? ''}
                 onChange={(e) => setSeries(e.target.value || null)}
@@ -126,9 +115,7 @@ export default function Home() {
               >
                 <option value="">All series</option>
                 {seriesList.map((s: any) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
+                  <option key={s} value={s}>{s}</option>
                 ))}
               </select>
             </div>
@@ -138,95 +125,111 @@ export default function Home() {
         <section className="col-span-3">
           <h1 className="text-3xl font-bold mb-6">Top Collections</h1>
 
-          <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.length === 0 ? (
-              <li className="text-gray-500">No collections found</li>
+          <div className="space-y-12">
+            {years.length === 0 ? (
+              <div className="text-gray-500">No collections found</div>
             ) : (
-              filtered.map((col: any) => {
-                const ds = designsByCollection.get(col.id) || []
+              years.map((year) => (
+                <div key={year} className="space-y-4">
+                  <h2 className="text-2xl font-semibold border-b pb-2">{year}</h2>
 
-                return (
-                  <li
-                    key={col.id}
-                    className="border rounded-lg overflow-hidden bg-white shadow-sm"
-                  >
-                    <div className="h-48 w-full bg-gray-100 flex items-center justify-center overflow-hidden">
-                      {col._thumbnail ? (
-                        <img
-                          src={col._thumbnail}
-                          alt={col.name}
-                          className="object-cover h-full w-full"
-                        />
-                      ) : (
-                        <div className="text-sm text-gray-500">No image</div>
-                      )}
-                    </div>
+                  <div className="space-y-6">
+                    {groupedByYear[year].map((col: any) => (
+                      <article key={col.id} className="border rounded-lg bg-white shadow-sm overflow-hidden">
+                        <div className="p-4 border-b">
+                          <div className="flex items-start justify-between gap-4">
+                            <div>
+                              <h3 className="text-xl font-semibold">{col.name}</h3>
+                              <p className="text-sm text-gray-600">
+                                Season: {col.season || 'N/A'} | Series: {col.series || 'N/A'}
+                              </p>
+                            </div>
 
-                    <div className="p-4">
-                      <div className="flex items-center justify-between">
-                        <h2 className="text-lg font-semibold">{col.name}</h2>
-                        <div className="text-sm text-gray-600 text-right">
-                          <div>{col.season}</div>
-                          <div>{col.series}</div>
+                            <Link
+                              to={`/collections/${col.id}`}
+                              className="text-sm text-blue-600 hover:underline"
+                            >
+                              View collection
+                            </Link>
+                          </div>
                         </div>
-                      </div>
 
-                      {Array.isArray(ds) && ds.length > 0 && (
-                        <div className="mt-4">
-                          <h3 className="text-sm font-medium text-gray-700 mb-2">
-                            Designs
-                          </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 p-4">
+                          <div className="md:col-span-2">
+                            <div className="h-56 w-full bg-gray-100 flex items-center justify-center overflow-hidden rounded">
+                              {col._thumbnail ? (
+                                <img
+                                  src={col._thumbnail}
+                                  alt={col.name}
+                                  className="object-cover h-full w-full"
+                                />
+                              ) : (
+                                <div className="text-sm text-gray-500">No image</div>
+                              )}
+                            </div>
+                          </div>
 
-                          <ul className="space-y-3">
-                            {ds.map((d: any) => {
-                              let thumb: string | null = null
+                          <div className="md:col-span-3">
+                            <p className="text-sm text-gray-700 mb-3">
+                              {col.description || 'No description'}
+                            </p>
 
-                              try {
-                                const imgs =
-                                  typeof d.image_urls === 'string'
-                                    ? JSON.parse(d.image_urls)
-                                    : d.image_urls
-                                if (Array.isArray(imgs) && imgs.length > 0) {
-                                  thumb = imgs[0]
-                                }
-                              } catch {}
+                            <h4 className="font-medium mb-2">Designs</h4>
+                            {Array.isArray(col._designs) && col._designs.length > 0 ? (
+                              <div className="space-y-3">
+                                {col._designs.map((d: any) => {
+                                  let thumb: string | null = null
+                                  try {
+                                    const imgs =
+                                      typeof d.image_urls === 'string'
+                                        ? JSON.parse(d.image_urls)
+                                        : d.image_urls
+                                    if (Array.isArray(imgs) && imgs.length > 0) {
+                                      thumb = imgs[0]
+                                    }
+                                  } catch {}
 
-                              return (
-                                <li key={d.id} className="flex gap-3 items-start">
-                                  <div className="h-12 w-12 shrink-0 rounded bg-gray-100 overflow-hidden flex items-center justify-center">
-                                    {thumb ? (
-                                      <img
-                                        src={thumb}
-                                        alt={d.name}
-                                        className="h-full w-full object-cover"
-                                      />
-                                    ) : (
-                                      <span className="text-[10px] text-gray-500">No img</span>
-                                    )}
-                                  </div>
+                                  return (
+                                    <div key={d.id} className="flex gap-3 items-start border rounded p-3">
+                                      <div className="h-16 w-16 bg-gray-100 rounded overflow-hidden flex items-center justify-center shrink-0">
+                                        {thumb ? (
+                                          <img
+                                            src={thumb}
+                                            alt={d.name}
+                                            className="h-full w-full object-cover"
+                                          />
+                                        ) : (
+                                          <span className="text-xs text-gray-500">No img</span>
+                                        )}
+                                      </div>
 
-                                  <div className="min-w-0 flex-1">
-                                    <div className="flex items-start justify-between gap-2">
-                                      <span className="text-sm font-medium text-gray-900 truncate">
-                                        {d.name}
-                                      </span>
-                                      <span className="text-sm text-gray-500 whitespace-nowrap">
-                                        {d.price ? `£${d.price}` : ''}
-                                      </span>
+                                      <div className="min-w-0 flex-1">
+                                        <div className="flex items-center justify-between gap-3">
+                                          <div className="font-medium">{d.name}</div>
+                                          <div className="text-sm text-gray-600">
+                                            {d.price ? `£${Number(d.price).toFixed(2)}` : ''}
+                                          </div>
+                                        </div>
+                                        <div className="text-sm text-gray-600">
+                                          {d.description || ''}
+                                        </div>
+                                      </div>
                                     </div>
-                                  </div>
-                                </li>
-                              )
-                            })}
-                          </ul>
+                                  )
+                                })}
+                              </div>
+                            ) : (
+                              <div className="text-sm text-gray-500">No designs</div>
+                            )}
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  </li>
-                )
-              })
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              ))
             )}
-          </ul>
+          </div>
         </section>
       </div>
     </main>

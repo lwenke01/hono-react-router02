@@ -1,7 +1,7 @@
 import { createFactory } from 'hono/factory'
 import { cors } from 'hono/cors'
 
-const F = createFactory<HonoENV>()
+const F = createFactory()
 
 function safeJson(value: any, fallback: any[] = []) {
   if (Array.isArray(value)) return value
@@ -31,16 +31,19 @@ function formatDesign(row: any) {
   }
 }
 
+function parseLimit(raw: string | null) {
+  let limit = parseInt(raw || '500', 10)
+  if (!Number.isFinite(limit) || limit <= 0) limit = 500
+  if (limit > 1000) limit = 1000
+  return limit
+}
+
 export const vendulaCollectionsGet = F.createHandlers(async (c) => {
-  // Support query params: q (search), season, limit
   const url = new URL(c.req.url)
   const q = (url.searchParams.get('q') || '').trim()
   const season = (url.searchParams.get('season') || '').trim()
-  let limit = parseInt(url.searchParams.get('limit') || '500', 10)
-  if (!Number.isFinite(limit) || limit <= 0) limit = 5
-  if (limit > 100) limit = 100
+  const limit = parseLimit(url.searchParams.get('limit'))
 
-  // Build SQL with optional WHERE clauses and bound params
   const where: string[] = []
   const params: any[] = []
 
@@ -50,12 +53,11 @@ export const vendulaCollectionsGet = F.createHandlers(async (c) => {
   }
 
   if (q) {
-    // search in name and description (case-insensitive)
     where.push("(LOWER(c.name) LIKE '%' || LOWER(?) || '%' OR LOWER(c.description) LIKE '%' || LOWER(?) || '%')")
     params.push(q, q)
   }
 
-  const whereClause = where.length > 0 ? ('WHERE ' + where.join(' AND ')) : ''
+  const whereClause = where.length > 0 ? `WHERE ${where.join(' AND ')}` : ''
 
   const sql = `
     SELECT c.*,
@@ -64,12 +66,17 @@ export const vendulaCollectionsGet = F.createHandlers(async (c) => {
           SELECT json_group_array(
             json_object(
               'id', d.id,
-              'name', d.name,
+              'collection_id', d.collection_id,
               'shape_id', d.shape_id,
-              'shape_name', s.name,
-              'design_images', d.image_urls,
+              'name', d.name,
+              'description', d.description,
+              'image_urls', d.image_urls,
               'price', d.price,
-              'measurements', s.measurements
+              'release_year', d.release_year,
+              'categories', d.categories,
+              'shape_name', s.name,
+              'measurements', s.measurements,
+              'shape_category', s.category
             )
           )
           FROM Designs AS d
@@ -80,21 +87,18 @@ export const vendulaCollectionsGet = F.createHandlers(async (c) => {
       ) AS designs
     FROM Collections AS c
     ${whereClause}
-    ORDER BY c.id DESC
+    ORDER BY COALESCE(c.release_year, 0) DESC, c.id DESC
     LIMIT ${limit}
   `
 
-  // Execute query; params contains only season/q bindings (limit injected directly)
   const { results } = await c.env.DB.prepare(sql).all(...params)
 
   const cleaned = results.map((row: any) => {
     const designs = safeJson(row.designs)
-
     return {
       ...formatCollection(row),
       designs: designs.map((design: any) => ({
-        ...design,
-        design_images: safeJson(design.design_images),
+        ...formatDesign(design),
       })),
     }
   })
@@ -105,16 +109,26 @@ export const vendulaCollectionsGet = F.createHandlers(async (c) => {
 export const vendulaCollectionById = F.createHandlers(async (c) => {
   const id = c.req.param('id')
 
-  const collection = await c.env.DB.prepare('SELECT * FROM Collections WHERE id = ?').bind(id).first()
+  const collection = await c.env.DB.prepare(
+    'SELECT * FROM Collections WHERE id = ?'
+  )
+    .bind(id)
+    .first()
+
   if (!collection) return c.json({ error: 'Not found' }, 404)
 
   const { results: designs } = await c.env.DB.prepare(`
-    SELECT D.*, S.name as shape_name, S.measurements, S.category as shape_category
+    SELECT D.*,
+           S.name as shape_name,
+           S.measurements,
+           S.category as shape_category
     FROM Designs D
     LEFT JOIN Shapes S ON D.shape_id = S.id
     WHERE D.collection_id = ?
     ORDER BY D.id DESC
-  `).bind(id).all()
+  `)
+    .bind(id)
+    .all()
 
   return c.json({
     ...formatCollection(collection),
@@ -122,40 +136,72 @@ export const vendulaCollectionById = F.createHandlers(async (c) => {
   })
 })
 
+export const vendulaDesignsGet = F.createHandlers(async (c) => {
+  const { results } = await c.env.DB.prepare(`
+    SELECT
+      D.*,
+      C.name AS collection_name,
+      C.release_year AS collection_year,
+      C.season AS collection_season,
+      C.series AS collection_series,
+      S.name AS shape_name,
+      S.measurements,
+      S.category AS shape_category
+    FROM Designs D
+    LEFT JOIN Collections C ON C.id = D.collection_id
+    LEFT JOIN Shapes S ON S.id = D.shape_id
+    ORDER BY COALESCE(C.release_year, D.release_year, 0) DESC, D.id DESC
+  `).all()
+
+  return c.json(
+    results.map((row: any) => ({
+      ...formatDesign(row),
+    }))
+  )
+})
+
 export const vendulaDesignsPost = F.createHandlers(async (c) => {
-  const { collection_id, shape_id, name, image_urls, price, release_year, categories } = await c.req.json()
+  const { collection_id, shape_id, name, image_urls, price, release_year, categories, description } =
+    await c.req.json()
 
   await c.env.DB.prepare(
-    'INSERT INTO Designs (collection_id, shape_id, name, image_urls, price, release_year, categories) VALUES (?, ?, ?, ?, ?, ?, ?)'
-  ).bind(
-    collection_id,
-    shape_id,
-    name,
-    JSON.stringify(image_urls ?? []),
-    price,
-    release_year,
-    JSON.stringify(categories ?? [])
-  ).run()
+    'INSERT INTO Designs (collection_id, shape_id, name, description, image_urls, price, release_year, categories) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+  )
+    .bind(
+      collection_id,
+      shape_id,
+      name,
+      description ?? null,
+      JSON.stringify(image_urls ?? []),
+      price,
+      release_year,
+      JSON.stringify(categories ?? [])
+    )
+    .run()
 
   return c.json({ success: true }, 201)
 })
 
 export const vendulaDesignsPut = F.createHandlers(async (c) => {
   const id = c.req.param('id')
-  const { collection_id, shape_id, name, image_urls, price, release_year, categories } = await c.req.json()
+  const { collection_id, shape_id, name, image_urls, price, release_year, categories, description } =
+    await c.req.json()
 
   await c.env.DB.prepare(
-    'UPDATE Designs SET collection_id=?, shape_id=?, name=?, image_urls=?, price=?, release_year=?, categories=? WHERE id=?'
-  ).bind(
-    collection_id,
-    shape_id,
-    name,
-    JSON.stringify(image_urls ?? []),
-    price,
-    release_year,
-    JSON.stringify(categories ?? []),
-    id
-  ).run()
+    'UPDATE Designs SET collection_id=?, shape_id=?, name=?, description=?, image_urls=?, price=?, release_year=?, categories=? WHERE id=?'
+  )
+    .bind(
+      collection_id,
+      shape_id,
+      name,
+      description ?? null,
+      JSON.stringify(image_urls ?? []),
+      price,
+      release_year,
+      JSON.stringify(categories ?? []),
+      id
+    )
+    .run()
 
   return c.json({ success: true })
 })
@@ -169,7 +215,10 @@ export const vendulaShapesPost = F.createHandlers(async (c) => {
   const { name, measurements, category } = await c.req.json()
   const categoryToStore = Array.isArray(category) ? JSON.stringify(category) : (category ?? '[]')
 
-  await c.env.DB.prepare('INSERT INTO Shapes (name, measurements, category) VALUES (?, ?, ?)').bind(name, measurements, categoryToStore).run()
+  await c.env.DB.prepare('INSERT INTO Shapes (name, measurements, category) VALUES (?, ?, ?)')
+    .bind(name, measurements, categoryToStore)
+    .run()
+
   return c.json({ success: true }, 201)
 })
 
@@ -192,23 +241,28 @@ export const vendulaCollectionsPost = F.createHandlers(async (c) => {
   } = body
 
   await c.env.DB.prepare(`
-    INSERT INTO Collections (name, description, season, series, edition, release_year, themes, colours, name_friendly, type, image_urls, releaseDate, exclusive)
+    INSERT INTO Collections (
+      name, description, season, series, edition, release_year,
+      themes, colours, name_friendly, type, image_urls, releaseDate, exclusive
+    )
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).bind(
-    name,
-    description,
-    season,
-    series,
-    edition,
-    release_year,
-    JSON.stringify(themes ?? []),
-    JSON.stringify(colours ?? []),
-    name_friendly,
-    type,
-    JSON.stringify(image_urls ?? []),
-    releaseDate,
-    exclusive
-  ).run()
+  `)
+    .bind(
+      name,
+      description,
+      season,
+      series,
+      edition,
+      release_year,
+      JSON.stringify(themes ?? []),
+      JSON.stringify(colours ?? []),
+      name_friendly,
+      type,
+      JSON.stringify(image_urls ?? []),
+      releaseDate,
+      exclusive
+    )
+    .run()
 
   return c.json({ success: true }, 201)
 })
@@ -234,24 +288,27 @@ export const vendulaCollectionsPut = F.createHandlers(async (c) => {
 
   await c.env.DB.prepare(`
     UPDATE Collections SET
-      name=?, description=?, season=?, series=?, edition=?, release_year=?, themes=?, colours=?, name_friendly=?, type=?, image_urls=?, releaseDate=?, exclusive=?
+      name=?, description=?, season=?, series=?, edition=?, release_year=?,
+      themes=?, colours=?, name_friendly=?, type=?, image_urls=?, releaseDate=?, exclusive=?
     WHERE id=?
-  `).bind(
-    name,
-    description,
-    season,
-    series,
-    edition,
-    release_year,
-    JSON.stringify(themes ?? []),
-    JSON.stringify(colours ?? []),
-    name_friendly,
-    type,
-    JSON.stringify(image_urls ?? []),
-    releaseDate,
-    exclusive,
-    id
-  ).run()
+  `)
+    .bind(
+      name,
+      description,
+      season,
+      series,
+      edition,
+      release_year,
+      JSON.stringify(themes ?? []),
+      JSON.stringify(colours ?? []),
+      name_friendly,
+      type,
+      JSON.stringify(image_urls ?? []),
+      releaseDate,
+      exclusive,
+      id
+    )
+    .run()
 
   return c.json({ success: true })
 })
