@@ -36,6 +36,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const [search, setSearch] = useState('')
   const [season, setSeason] = useState<string | null>(null)
   const [series, setSeries] = useState<string | null>(null)
+  const [shape, setShape] = useState<string | null>(null)
 
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxImages, setLightboxImages] = useState<string[]>([])
@@ -44,37 +45,80 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const cols = Array.isArray(collections) ? collections : []
 
   const normalized = useMemo(() => {
-    return cols.map((c: any) => {
-      const designs = Array.isArray(c.designs) ? c.designs : []
-      const images = parseImages(c.image_urls)
-      return {
-        ...c,
-        _thumbnail: images[0] || null,
-        _designs: designs,
-      }
-    })
+    return cols.map((c: any) => ({
+      ...c,
+      _thumbnail: parseImages(c.image_urls)[0] || null,
+      _designs: Array.isArray(c.designs) ? c.designs : [],
+    }))
   }, [cols])
 
   const seasons = Array.from(new Set(normalized.map((c: any) => c.season).filter(Boolean)))
   const seriesList = Array.from(new Set(normalized.map((c: any) => c.series).filter(Boolean)))
+  const allShapes = Array.from(
+    new Set(
+      normalized.flatMap((c: any) =>
+        (c._designs || [])
+          .map((d: any) => (d.shape_name || d.shape || '').trim())
+          .filter(Boolean),
+      ),
+    ),
+  ).sort()
 
-  const filtered = normalized
+  const matchesText = (value: any, term: string) =>
+    String(value ?? '').toLowerCase().includes(term)
+
+  const filteredCollections = normalized
+    .map((c: any) => {
+      const designs = (c._designs || []).filter((d: any) => {
+        if (shape) {
+          const designShape = (d.shape_name || d.shape || '').trim().toLowerCase()
+          if (designShape !== shape.toLowerCase()) return false
+        }
+
+        if (!search) return true
+
+        const term = search.toLowerCase()
+        return (
+          matchesText(d.name, term) ||
+          matchesText(d.description, term) ||
+          matchesText(d.shape_name, term) ||
+          matchesText(d.shape, term) ||
+          (Array.isArray(d.categories) && d.categories.some((x: any) => matchesText(x, term)))
+        )
+      })
+
+      const collectionMatches =
+        !search ||
+        matchesText(c.name, search.toLowerCase()) ||
+        matchesText(c.description, search.toLowerCase()) ||
+        matchesText(c.season, search.toLowerCase()) ||
+        matchesText(c.series, search.toLowerCase()) ||
+        matchesText(c.release_year, search.toLowerCase())
+
+      return { ...c, _filteredDesigns: designs, _collectionMatches: collectionMatches }
+    })
     .filter((c: any) => {
       if (season && c.season !== season) return false
       if (series && c.series !== series) return false
-      if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false
-      return true
+
+      if (shape && c._filteredDesigns.length === 0) return false
+
+      if (search && !c._collectionMatches && c._filteredDesigns.length === 0) return false
+
+      if (!search && !shape) return true
+
+      return c._filteredDesigns.length > 0 || c._collectionMatches
     })
     .sort((a: any, b: any) => Number(b.release_year ?? 0) - Number(a.release_year ?? 0))
 
   const groupedByYear = useMemo(() => {
-    return filtered.reduce((acc: Record<string, any[]>, col: any) => {
+    return filteredCollections.reduce((acc: Record<string, any[]>, col: any) => {
       const year = String(col.release_year ?? 'Unknown')
       if (!acc[year]) acc[year] = []
       acc[year].push(col)
       return acc
     }, {})
-  }, [filtered])
+  }, [filteredCollections])
 
   const years = Object.keys(groupedByYear).sort((a, b) => Number(b) - Number(a))
 
@@ -123,7 +167,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search collections"
+                placeholder="Search collections, designs, shapes"
                 className="w-full rounded border px-3 py-2"
               />
             </div>
@@ -159,6 +203,22 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                 ))}
               </select>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Filter by shape</label>
+              <select
+                value={shape ?? ''}
+                onChange={(e) => setShape(e.target.value || null)}
+                className="w-full rounded border px-3 py-2"
+              >
+                <option value="">All shapes</option>
+                {allShapes.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </aside>
 
@@ -174,106 +234,112 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                   <h2 className="text-2xl font-semibold border-b pb-2">{year}</h2>
 
                   <div className="space-y-6">
-                    {groupedByYear[year].map((col: any) => (
-                      <article key={col.id} className="border rounded-lg bg-white shadow-sm overflow-hidden">
-                        <div className="p-4 border-b">
-                          <div className="flex items-start justify-between gap-4">
-                            <div>
-                              <h3 className="text-xl font-semibold">{col.name}</h3>
-                              <p className="text-sm text-gray-600">
-                                Season: {col.season || 'N/A'} | Series: {col.series || 'N/A'}
-                              </p>
+                    {groupedByYear[year].map((col: any) => {
+                      const designs = Array.isArray(col._filteredDesigns) ? col._filteredDesigns : []
+                      const showCollectionImage = designs.length === 0 && !!col._thumbnail
+
+                      return (
+                        <article key={col.id} className="border rounded-lg bg-white shadow-sm overflow-hidden">
+                          <div className="p-4 border-b">
+                            <div className="flex items-start justify-between gap-4">
+                              <div>
+                                <h3 className="text-xl font-semibold">{col.name}</h3>
+                                <p className="text-sm text-gray-600">
+                                  Season: {col.season || 'N/A'} | Series: {col.series || 'N/A'}
+                                </p>
+                              </div>
+
+                              <Link
+                                to={`/collections/${col.id}`}
+                                className="text-sm text-blue-600 hover:underline"
+                              >
+                                View collection
+                              </Link>
                             </div>
-
-                            <Link
-                              to={`/collections/${col.id}`}
-                              className="text-sm text-blue-600 hover:underline"
-                            >
-                              View collection
-                            </Link>
                           </div>
-                        </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 p-4">
-                          <div className="md:col-span-2">
-                            <div className="h-56 w-full bg-gray-100 flex items-center justify-center overflow-hidden rounded">
-                              {col._thumbnail ? (
-                                <img
-                                  src={col._thumbnail}
-                                  alt={col.name}
-                                  className="object-cover h-full w-full cursor-pointer"
-                                  onClick={() => openLightbox([col._thumbnail], 0)}
-                                />
+                          <div className="grid grid-cols-1 md:grid-cols-6 gap-5 p-5">
+                            {showCollectionImage && (
+                              <div className="md:col-span-2">
+                                <div className="h-64 w-full bg-gray-100 flex items-center justify-center overflow-hidden rounded">
+                                  <img
+                                    src={col._thumbnail}
+                                    alt={col.name}
+                                    className="object-cover h-full w-full cursor-pointer"
+                                    onClick={() => openLightbox([col._thumbnail], 0)}
+                                  />
+                                </div>
+                              </div>
+                            )}
+
+                            <div className={showCollectionImage ? 'md:col-span-4' : 'md:col-span-6'}>
+                              <p className="text-sm text-gray-700 mb-4">
+                                {col.description || 'No description'}
+                              </p>
+
+                              <h4 className="font-medium mb-3 text-lg">Designs</h4>
+                              {designs.length > 0 ? (
+                                <div className="space-y-4">
+                                  {designs.map((d: any) => {
+                                    const images = parseImages(d.image_urls)
+                                    const thumb = images[0] || null
+
+                                    return (
+                                      <div key={d.id} className="flex gap-4 items-start border rounded-lg p-4">
+                                        <div className="h-28 w-28 bg-gray-100 rounded overflow-hidden flex items-center justify-center shrink-0">
+                                          {thumb ? (
+                                            <img
+                                              src={thumb}
+                                              alt={d.name}
+                                              className="h-full w-full object-cover cursor-pointer"
+                                              onClick={() => openLightbox(images, 0)}
+                                            />
+                                          ) : (
+                                            <span className="text-xs text-gray-500">No img</span>
+                                          )}
+                                        </div>
+
+                                        <div className="min-w-0 flex-1">
+                                          <div className="flex items-center justify-between gap-3">
+                                            <div className="text-lg font-medium">{d.name}</div>
+                                            <div className="text-sm text-gray-600">
+                                              {d.price ? `£${Number(d.price).toFixed(2)}` : ''}
+                                            </div>
+                                          </div>
+
+                                          {images.length > 0 && (
+                                            <div className="mt-3 flex gap-2 flex-wrap">
+                                              {images.slice(0, 6).map((src, idx) => (
+                                                <img
+                                                  key={idx}
+                                                  src={src}
+                                                  alt={`${d.name} ${idx + 1}`}
+                                                  className="h-16 w-16 object-cover rounded cursor-pointer border"
+                                                  onClick={() => openLightbox(images, idx)}
+                                                />
+                                              ))}
+                                            </div>
+                                          )}
+
+                                          <div className="text-sm text-gray-600 mt-3">
+                                            {d.description || ''}
+                                          </div>
+                                          <div className="text-xs text-gray-500 mt-2">
+                                            Shape: {d.shape_name || d.shape || 'N/A'}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
                               ) : (
-                                <div className="text-sm text-gray-500">No image</div>
+                                <div className="text-sm text-gray-500">No designs</div>
                               )}
                             </div>
                           </div>
-
-                          <div className="md:col-span-3">
-                            <p className="text-sm text-gray-700 mb-3">
-                              {col.description || 'No description'}
-                            </p>
-
-                            <h4 className="font-medium mb-2">Designs</h4>
-                            {Array.isArray(col._designs) && col._designs.length > 0 ? (
-                              <div className="space-y-3">
-                                {col._designs.map((d: any) => {
-                                  const images = parseImages(d.image_urls)
-                                  const thumb = images[0] || null
-
-                                  return (
-                                    <div key={d.id} className="flex gap-3 items-start border rounded p-3">
-                                      <div className="h-16 w-16 bg-gray-100 rounded overflow-hidden flex items-center justify-center shrink-0">
-                                        {thumb ? (
-                                          <img
-                                            src={thumb}
-                                            alt={d.name}
-                                            className="h-full w-full object-cover cursor-pointer"
-                                            onClick={() => openLightbox(images, 0)}
-                                          />
-                                        ) : (
-                                          <span className="text-xs text-gray-500">No img</span>
-                                        )}
-                                      </div>
-
-                                      <div className="min-w-0 flex-1">
-                                        <div className="flex items-center justify-between gap-3">
-                                          <div className="font-medium">{d.name}</div>
-                                          <div className="text-sm text-gray-600">
-                                            {d.price ? `£${Number(d.price).toFixed(2)}` : ''}
-                                          </div>
-                                        </div>
-
-                                        {images.length > 0 && (
-                                          <div className="mt-2 flex gap-2 flex-wrap">
-                                            {images.slice(0, 4).map((src, idx) => (
-                                              <img
-                                                key={idx}
-                                                src={src}
-                                                alt={`${d.name} ${idx + 1}`}
-                                                className="h-14 w-14 object-cover rounded cursor-pointer border"
-                                                onClick={() => openLightbox(images, idx)}
-                                              />
-                                            ))}
-                                          </div>
-                                        )}
-
-                                        <div className="text-sm text-gray-600 mt-2">
-                                          {d.description || ''}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )
-                                })}
-                              </div>
-                            ) : (
-                              <div className="text-sm text-gray-500">No designs</div>
-                            )}
-                          </div>
-                        </div>
-                      </article>
-                    ))}
+                        </article>
+                      )
+                    })}
                   </div>
                 </div>
               ))
