@@ -133,7 +133,7 @@ http://localhost:8787
     To test with D1 and other remote resources, use:
 
 bash
-npx wrangler dev --remote
+npx wrangler dev
 
 This runs your code locally but uses remote Cloudflare resources like D1 databases.
 Deploy to a public URL
@@ -147,3 +147,5 @@ Then your Worker will be live at:
 
 text
 https://<your-worker-name>.<your-subdomain>.workers.dev
+
+Check DB connection: cd hono-react-router && wrangler d1 execute vendula-bags-db --remote "SELECT COUNT(*) as count FROM Collections;"
