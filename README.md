@@ -119,3 +119,31 @@ npx wrangler versions deploy
 
 This template comes pre-configured with [Tailwind CSS](https://tailwindcss.com/) for rapid styling.
 Feel free to replace or extend it with your preferred CSS framework or methodology.
+
+    In your Worker project directory (where wrangler.jsonc or wrangler.toml is):
+
+bash
+npx wrangler dev
+
+    Your Worker will be available at:
+
+text
+http://localhost:8787
+
+    To test with D1 and other remote resources, use:
+
+bash
+npx wrangler dev --remote
+
+This runs your code locally but uses remote Cloudflare resources like D1 databases.
+Deploy to a public URL
+
+To expose your Worker on the internet:
+
+bash
+npx wrangler deploy
+
+Then your Worker will be live at:
+
+text
+https://<your-worker-name>.<your-subdomain>.workers.dev

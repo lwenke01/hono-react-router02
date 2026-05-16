@@ -36,7 +36,7 @@ export const vendulaCollectionsGet = F.createHandlers(async (c) => {
   const url = new URL(c.req.url)
   const q = (url.searchParams.get('q') || '').trim()
   const season = (url.searchParams.get('season') || '').trim()
-  let limit = parseInt(url.searchParams.get('limit') || '5', 10)
+  let limit = parseInt(url.searchParams.get('limit') || '500', 10)
   if (!Number.isFinite(limit) || limit <= 0) limit = 5
   if (limit > 100) limit = 100
 
