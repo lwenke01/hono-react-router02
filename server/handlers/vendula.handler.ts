@@ -76,7 +76,9 @@ export const vendulaCollectionsGet = F.createHandlers(async (c) => {
               'categories', d.categories,
               'shape_name', s.name,
               'measurements', s.measurements,
-              'shape_category', s.category
+              'shape_category', s.category,
+               'shape_size', s.size,
+               'shape_desc', s.description
             )
           )
           FROM Designs AS d

@@ -59,6 +59,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       normalized.flatMap((c: any) =>
         (c._designs || [])
           .map((d: any) => (d.shape_name || d.shape || '').trim())
+          .map((d: any) => (d.measurements ||  '').trim())
           .filter(Boolean),
       ),
     ),
@@ -72,7 +73,10 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       const designs = (c._designs || []).filter((d: any) => {
         if (shape) {
           const designShape = (d.shape_name || d.shape || '').trim().toLowerCase()
+            
+          
           if (designShape !== shape.toLowerCase()) return false
+             
         }
 
         if (!search) return true
@@ -82,6 +86,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           matchesText(d.name, term) ||
           matchesText(d.description, term) ||
           matchesText(d.shape_name, term) ||
+          matchesText(d.measurements, term) ||
           matchesText(d.shape, term) ||
           (Array.isArray(d.categories) && d.categories.some((x: any) => matchesText(x, term)))
         )
@@ -325,7 +330,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                                             {d.description || ''}
                                           </div>
                                           <div className="text-xs text-gray-500 mt-2">
-                                            Shape: {d.shape_name || d.shape || 'N/A'}
+                                            Shape: {d.shape_name || d.shape || 'N/A'} |   Measurements: {d.measurements || 'N/A'}
                                           </div>
                                         </div>
                                       </div>
