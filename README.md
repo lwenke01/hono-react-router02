@@ -122,6 +122,32 @@ Feel free to replace or extend it with your preferred CSS framework or methodolo
 
     In your Worker project directory (where wrangler.jsonc or wrangler.toml is):
 
+
+## Cloudflare D1 DB 
+
+### update
+
+```sh
+pnpm dlx wrangler d1 execute vendula-bags-db --remote --command="INSERT INTO collections (name, season) VALUES ('Test','SS26');"
+```
+
+### check tables
+```sh
+pnpm dlx wrangler d1 execute vendula-bags-db --remote --command="SELECT name FROM sqlite_schema WHERE type='table';"
+```
+```sh
+pnpm dlx wrangler d1 execute vendula-bags-db --remote --command="SELECT * FROM d1_migrations;"
+```
+bash
+pnpm dlx wrangler d1 migrations apply vendula-bags-db --remote
+
+Then verify:
+
+bash
+pnpm dlx wrangler d1 execute vendula-bags-db --remote --command="SELECT name FROM sqlite_schema WHERE type='table';"
+
+
+---- 
 bash
 npx wrangler dev
 
@@ -133,7 +159,7 @@ http://localhost:8787
     To test with D1 and other remote resources, use:
 
 bash
-npx wrangler dev
+npx wrangler dev --remote
 
 This runs your code locally but uses remote Cloudflare resources like D1 databases.
 Deploy to a public URL
