@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import type { Route } from './+types/home'
 
@@ -19,6 +19,17 @@ export function HydrateFallback() {
   return <div className="p-8">Loading...</div>
 }
 
+function parseImages(value: any): string[] {
+  if (Array.isArray(value)) return value.filter(Boolean)
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value)
+      if (Array.isArray(parsed)) return parsed.filter(Boolean)
+    } catch {}
+  }
+  return []
+}
+
 export default function Home({ loaderData }: Route.ComponentProps) {
   const { collections } = loaderData
 
@@ -26,25 +37,19 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const [season, setSeason] = useState<string | null>(null)
   const [series, setSeries] = useState<string | null>(null)
 
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [lightboxImages, setLightboxImages] = useState<string[]>([])
+  const [lightboxIndex, setLightboxIndex] = useState(0)
+
   const cols = Array.isArray(collections) ? collections : []
 
   const normalized = useMemo(() => {
     return cols.map((c: any) => {
       const designs = Array.isArray(c.designs) ? c.designs : []
-
-      let thumbnail: string | null = null
-      if (Array.isArray(c.image_urls) && c.image_urls.length > 0) {
-        thumbnail = c.image_urls[0]
-      } else if (typeof c.image_urls === 'string') {
-        try {
-          const parsed = JSON.parse(c.image_urls)
-          if (Array.isArray(parsed) && parsed.length > 0) thumbnail = parsed[0]
-        } catch {}
-      }
-
+      const images = parseImages(c.image_urls)
       return {
         ...c,
-        _thumbnail: thumbnail,
+        _thumbnail: images[0] || null,
         _designs: designs,
       }
     })
@@ -60,11 +65,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false
       return true
     })
-    .sort((a: any, b: any) => {
-      const yearA = Number(a.release_year ?? 0)
-      const yearB = Number(b.release_year ?? 0)
-      return yearB - yearA
-    })
+    .sort((a: any, b: any) => Number(b.release_year ?? 0) - Number(a.release_year ?? 0))
 
   const groupedByYear = useMemo(() => {
     return filtered.reduce((acc: Record<string, any[]>, col: any) => {
@@ -76,6 +77,41 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   }, [filtered])
 
   const years = Object.keys(groupedByYear).sort((a, b) => Number(b) - Number(a))
+
+  const openLightbox = (images: string[], index = 0) => {
+    if (!images.length) return
+    setLightboxImages(images)
+    setLightboxIndex(index)
+    setLightboxOpen(true)
+  }
+
+  const closeLightbox = () => setLightboxOpen(false)
+
+  const nextImage = () => {
+    setLightboxIndex((current) =>
+      lightboxImages.length ? (current + 1) % lightboxImages.length : current,
+    )
+  }
+
+  const prevImage = () => {
+    setLightboxIndex((current) =>
+      lightboxImages.length
+        ? (current - 1 + lightboxImages.length) % lightboxImages.length
+        : current,
+    )
+  }
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!lightboxOpen) return
+      if (e.key === 'Escape') closeLightbox()
+      if (e.key === 'ArrowRight') nextImage()
+      if (e.key === 'ArrowLeft') prevImage()
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [lightboxOpen, lightboxImages.length])
 
   return (
     <main className="flex min-h-screen items-start justify-center p-8">
@@ -101,7 +137,9 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               >
                 <option value="">All seasons</option>
                 {seasons.map((s) => (
-                  <option key={s} value={s}>{s}</option>
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
                 ))}
               </select>
             </div>
@@ -115,7 +153,9 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               >
                 <option value="">All series</option>
                 {seriesList.map((s: any) => (
-                  <option key={s} value={s}>{s}</option>
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
                 ))}
               </select>
             </div>
@@ -161,7 +201,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                                 <img
                                   src={col._thumbnail}
                                   alt={col.name}
-                                  className="object-cover h-full w-full"
+                                  className="object-cover h-full w-full cursor-pointer"
+                                  onClick={() => openLightbox([col._thumbnail], 0)}
                                 />
                               ) : (
                                 <div className="text-sm text-gray-500">No image</div>
@@ -178,16 +219,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                             {Array.isArray(col._designs) && col._designs.length > 0 ? (
                               <div className="space-y-3">
                                 {col._designs.map((d: any) => {
-                                  let thumb: string | null = null
-                                  try {
-                                    const imgs =
-                                      typeof d.image_urls === 'string'
-                                        ? JSON.parse(d.image_urls)
-                                        : d.image_urls
-                                    if (Array.isArray(imgs) && imgs.length > 0) {
-                                      thumb = imgs[0]
-                                    }
-                                  } catch {}
+                                  const images = parseImages(d.image_urls)
+                                  const thumb = images[0] || null
 
                                   return (
                                     <div key={d.id} className="flex gap-3 items-start border rounded p-3">
@@ -196,7 +229,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                                           <img
                                             src={thumb}
                                             alt={d.name}
-                                            className="h-full w-full object-cover"
+                                            className="h-full w-full object-cover cursor-pointer"
+                                            onClick={() => openLightbox(images, 0)}
                                           />
                                         ) : (
                                           <span className="text-xs text-gray-500">No img</span>
@@ -210,7 +244,22 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                                             {d.price ? `£${Number(d.price).toFixed(2)}` : ''}
                                           </div>
                                         </div>
-                                        <div className="text-sm text-gray-600">
+
+                                        {images.length > 0 && (
+                                          <div className="mt-2 flex gap-2 flex-wrap">
+                                            {images.slice(0, 4).map((src, idx) => (
+                                              <img
+                                                key={idx}
+                                                src={src}
+                                                alt={`${d.name} ${idx + 1}`}
+                                                className="h-14 w-14 object-cover rounded cursor-pointer border"
+                                                onClick={() => openLightbox(images, idx)}
+                                              />
+                                            ))}
+                                          </div>
+                                        )}
+
+                                        <div className="text-sm text-gray-600 mt-2">
                                           {d.description || ''}
                                         </div>
                                       </div>
@@ -232,6 +281,56 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           </div>
         </section>
       </div>
+
+      {lightboxOpen && lightboxImages.length > 0 && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+          onClick={closeLightbox}
+        >
+          <button
+            type="button"
+            className="absolute left-4 md:left-8 text-white text-4xl bg-black/40 rounded-full w-12 h-12"
+            onClick={(e) => {
+              e.stopPropagation()
+              prevImage()
+            }}
+            aria-label="Previous image"
+          >
+            ‹
+          </button>
+
+          <img
+            src={lightboxImages[lightboxIndex]}
+            alt="Expanded design"
+            className="max-h-[90vh] max-w-[90vw] object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+
+          <button
+            type="button"
+            className="absolute right-4 md:right-8 text-white text-4xl bg-black/40 rounded-full w-12 h-12"
+            onClick={(e) => {
+              e.stopPropagation()
+              nextImage()
+            }}
+            aria-label="Next image"
+          >
+            ›
+          </button>
+
+          <button
+            type="button"
+            className="absolute top-4 right-4 text-white text-2xl bg-black/40 rounded-full w-10 h-10"
+            onClick={(e) => {
+              e.stopPropagation()
+              closeLightbox()
+            }}
+            aria-label="Close lightbox"
+          >
+            ×
+          </button>
+        </div>
+      )}
     </main>
   )
 }
