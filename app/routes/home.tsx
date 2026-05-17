@@ -5,8 +5,8 @@ import { useInfiniteCollections } from './useInfiniteCollections'
 
 export function meta(_: Route.MetaArgs) {
   return [
-    { title: 'Collections' },
-    { name: 'description', content: 'Top collections' },
+    { title: 'Vendula London Handbag Library' },
+    { name: 'description', content: 'An archives library of all seasons, designs, collections of Vendula London bags' },
   ]
 }
 

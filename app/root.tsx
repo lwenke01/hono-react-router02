@@ -49,7 +49,7 @@ export default function App() {
   return (
     <>
       <header className="fixed right-8 flex items-center justify-center px-4 py-8">
-        {isPending ? null : session ? (
+        {/* {isPending ? null : session ? (
           <div className="flex items-center gap-4">
             <span className="text-sm">{session.user.email}</span>
             <button
@@ -66,7 +66,7 @@ export default function App() {
           >
             Sign In
           </Link>
-        )}
+        )} */}
       </header>
       <main>
         <Outlet />
