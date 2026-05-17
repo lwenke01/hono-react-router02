@@ -34,3 +34,4 @@ export const collectionsDelete = F.createHandlers(async (c) => {
   }
   return c.json(collections)
 })
+

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import type { Route } from './+types/home'
+import { useInfiniteCollections } from './useInfiniteCollections'
 
 export function meta(_: Route.MetaArgs) {
   return [
@@ -20,14 +21,18 @@ export function HydrateFallback() {
 }
 
 function parseImages(value: any): string[] {
-  if (Array.isArray(value)) return value.filter(Boolean)
+  if (Array.isArray(value)) return Array.from(new Set(value.filter(Boolean)))
   if (typeof value === 'string') {
     try {
       const parsed = JSON.parse(value)
-      if (Array.isArray(parsed)) return parsed.filter(Boolean)
+      if (Array.isArray(parsed)) return Array.from(new Set(parsed.filter(Boolean)))
     } catch {}
   }
   return []
+}
+
+function uniq(arr: string[]) {
+  return Array.from(new Set(arr.filter(Boolean)))
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
@@ -42,90 +47,105 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const [lightboxImages, setLightboxImages] = useState<string[]>([])
   const [lightboxIndex, setLightboxIndex] = useState(0)
 
-  const cols = Array.isArray(collections) ? collections : []
+  const normalizedCollections = useMemo(() => {
+    return (Array.isArray(collections) ? collections : []).map((col: any) => {
+      const designs = Array.isArray(col.designs) ? col.designs : []
+      const collectionImages = parseImages(col.image_urls)
+      const designImages = uniq(designs.flatMap((d: any) => parseImages(d.image_urls)))
 
-  const normalized = useMemo(() => {
-    return cols.map((c: any) => ({
-      ...c,
-      _thumbnail: parseImages(c.image_urls)[0] || null,
-      _designs: Array.isArray(c.designs) ? c.designs : [],
-    }))
-  }, [cols])
+      return {
+        ...col,
+        _designs: designs,
+        _collectionImages: collectionImages,
+        _thumbnail: collectionImages[0] || designImages[0] || null,
+      }
+    })
+  }, [collections])
 
-  const seasons = Array.from(new Set(normalized.map((c: any) => c.season).filter(Boolean)))
-  const seriesList = Array.from(new Set(normalized.map((c: any) => c.series).filter(Boolean)))
-  const allShapes = Array.from(
-    new Set(
-      normalized.flatMap((c: any) =>
-        (c._designs || [])
-          .map((d: any) => (d.shape_name || d.shape || '').trim())
-          .map((d: any) => (d.measurements ||  '').trim())
-          .filter(Boolean),
+  const seasons = useMemo(
+    () => Array.from(new Set(normalizedCollections.map((c: any) => c.season).filter(Boolean))),
+    [normalizedCollections],
+  )
+
+  const seriesList = useMemo(
+    () => Array.from(new Set(normalizedCollections.map((c: any) => c.series).filter(Boolean))),
+    [normalizedCollections],
+  )
+
+  const shapeList = useMemo(() => {
+    return Array.from(
+      new Set(
+        normalizedCollections.flatMap((c: any) =>
+          (c._designs || [])
+            .map((d: any) => String(d.shape_name || d.shape || '').trim())
+            .filter(Boolean),
+        ),
       ),
-    ),
-  ).sort()
+    ).sort()
+  }, [normalizedCollections])
 
-  const matchesText = (value: any, term: string) =>
-    String(value ?? '').toLowerCase().includes(term)
+  const filteredCollections = useMemo(() => {
+    const term = search.trim().toLowerCase()
 
-  const filteredCollections = normalized
-    .map((c: any) => {
-      const designs = (c._designs || []).filter((d: any) => {
-        if (shape) {
-          const designShape = (d.shape_name || d.shape || '').trim().toLowerCase()
-            
-          
-          if (designShape !== shape.toLowerCase()) return false
-             
-        }
+    return normalizedCollections
+      .map((c: any) => {
+        const collectionMatches =
+          !term ||
+          [c.name, c.description, c.season, c.series, c.release_year]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase()
+            .includes(term)
 
-        if (!search) return true
+        const designs = (c._designs || []).filter((d: any) => {
+          const designShape = String(d.shape_name || d.shape || '').trim().toLowerCase()
+          if (shape && designShape !== shape.toLowerCase()) return false
+          if (!term) return true
 
-        const term = search.toLowerCase()
-        return (
-          matchesText(d.name, term) ||
-          matchesText(d.description, term) ||
-          matchesText(d.shape_name, term) ||
-          matchesText(d.measurements, term) ||
-          matchesText(d.shape, term) ||
-          (Array.isArray(d.categories) && d.categories.some((x: any) => matchesText(x, term)))
-        )
+          const haystack = [
+            d.name,
+            d.description,
+            d.shape_name,
+            d.shape,
+            ...(Array.isArray(d.categories) ? d.categories : []),
+          ]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase()
+
+          return haystack.includes(term)
+        })
+
+        return { ...c, _filteredDesigns: designs, _collectionMatches: collectionMatches }
       })
+      .filter((c: any) => {
+        if (season && c.season !== season) return false
+        if (series && c.series !== series) return false
+        if (shape && c._filteredDesigns.length === 0) return false
+        if (search && !c._collectionMatches && c._filteredDesigns.length === 0) return false
+        return true
+      })
+      .sort((a: any, b: any) => Number(b.release_year ?? 0) - Number(a.release_year ?? 0))
+  }, [normalizedCollections, search, season, series, shape])
 
-      const collectionMatches =
-        !search ||
-        matchesText(c.name, search.toLowerCase()) ||
-        matchesText(c.description, search.toLowerCase()) ||
-        matchesText(c.season, search.toLowerCase()) ||
-        matchesText(c.series, search.toLowerCase()) ||
-        matchesText(c.release_year, search.toLowerCase())
-
-      return { ...c, _filteredDesigns: designs, _collectionMatches: collectionMatches }
-    })
-    .filter((c: any) => {
-      if (season && c.season !== season) return false
-      if (series && c.series !== series) return false
-
-      if (shape && c._filteredDesigns.length === 0) return false
-
-      if (search && !c._collectionMatches && c._filteredDesigns.length === 0) return false
-
-      if (!search && !shape) return true
-
-      return c._filteredDesigns.length > 0 || c._collectionMatches
-    })
-    .sort((a: any, b: any) => Number(b.release_year ?? 0) - Number(a.release_year ?? 0))
+  const { visibleItems, hasMore, isLoadingMore, loadMoreRef } = useInfiniteCollections(
+    filteredCollections,
+    50,
+  )
 
   const groupedByYear = useMemo(() => {
-    return filteredCollections.reduce((acc: Record<string, any[]>, col: any) => {
+    return visibleItems.reduce((acc: Record<string, any[]>, col: any) => {
       const year = String(col.release_year ?? 'Unknown')
       if (!acc[year]) acc[year] = []
       acc[year].push(col)
       return acc
     }, {})
-  }, [filteredCollections])
+  }, [visibleItems])
 
-  const years = Object.keys(groupedByYear).sort((a, b) => Number(b) - Number(a))
+  const years = useMemo(
+    () => Object.keys(groupedByYear).sort((a, b) => Number(b) - Number(a)),
+    [groupedByYear],
+  )
 
   const openLightbox = (images: string[], index = 0) => {
     if (!images.length) return
@@ -201,7 +221,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                 className="w-full rounded border px-3 py-2"
               >
                 <option value="">All series</option>
-                {seriesList.map((s: any) => (
+                {seriesList.map((s) => (
                   <option key={s} value={s}>
                     {s}
                   </option>
@@ -217,7 +237,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                 className="w-full rounded border px-3 py-2"
               >
                 <option value="">All shapes</option>
-                {allShapes.map((s) => (
+                {shapeList.map((s) => (
                   <option key={s} value={s}>
                     {s}
                   </option>
@@ -241,10 +261,16 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                   <div className="space-y-6">
                     {groupedByYear[year].map((col: any) => {
                       const designs = Array.isArray(col._filteredDesigns) ? col._filteredDesigns : []
-                      const showCollectionImage = designs.length === 0 && !!col._thumbnail
+                      const collectionImages = uniq(col._collectionImages || [])
+                      const designImages = uniq(designs.flatMap((d: any) => parseImages(d.image_urls)))
+                      const collectionPhoto = collectionImages[0] || designImages[0] || null
+                      const showCollectionImage = !!collectionPhoto
 
                       return (
-                        <article key={col.id} className="border rounded-lg bg-white shadow-sm overflow-hidden">
+                        <article
+                          key={col.id}
+                          className="border rounded-lg bg-white shadow-sm overflow-hidden"
+                        >
                           <div className="p-4 border-b">
                             <div className="flex items-start justify-between gap-4">
                               <div>
@@ -268,10 +294,10 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                               <div className="md:col-span-2">
                                 <div className="h-64 w-full bg-gray-100 flex items-center justify-center overflow-hidden rounded">
                                   <img
-                                    src={col._thumbnail}
+                                    src={collectionPhoto}
                                     alt={col.name}
                                     className="object-cover h-full w-full cursor-pointer"
-                                    onClick={() => openLightbox([col._thumbnail], 0)}
+                                    onClick={() => openLightbox([collectionPhoto], 0)}
                                   />
                                 </div>
                               </div>
@@ -283,14 +309,18 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                               </p>
 
                               <h4 className="font-medium mb-3 text-lg">Designs</h4>
+
                               {designs.length > 0 ? (
                                 <div className="space-y-4">
                                   {designs.map((d: any) => {
-                                    const images = parseImages(d.image_urls)
+                                    const images = uniq(parseImages(d.image_urls))
                                     const thumb = images[0] || null
 
                                     return (
-                                      <div key={d.id} className="flex gap-4 items-start border rounded-lg p-4">
+                                      <div
+                                        key={d.id}
+                                        className="flex gap-4 items-start border rounded-lg p-4"
+                                      >
                                         <div className="h-28 w-28 bg-gray-100 rounded overflow-hidden flex items-center justify-center shrink-0">
                                           {thumb ? (
                                             <img
@@ -329,8 +359,10 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                                           <div className="text-sm text-gray-600 mt-3">
                                             {d.description || ''}
                                           </div>
+
                                           <div className="text-xs text-gray-500 mt-2">
-                                            Shape: {d.shape_name || d.shape || 'N/A'} |   Measurements: {d.measurements || 'N/A'}
+                                            Shape: {d.shape_name || d.shape || 'N/A'}
+                                            {d.measurements ? ` | Measurements: ${d.measurements}` : ''}
                                           </div>
                                         </div>
                                       </div>
@@ -350,6 +382,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               ))
             )}
           </div>
+
+          <div ref={loadMoreRef} className="h-12 w-full" />
+          {hasMore && isLoadingMore && (
+            <div className="text-center text-sm text-gray-500 py-4">Loading more...</div>
+          )}
         </section>
       </div>
 

@@ -5,6 +5,7 @@ import serverAdapter from 'hono-react-router-adapter/vite'
 import { defineConfig, type PluginOption } from 'vite'
 import { getLoadContext } from './load-context'
 
+
 export default defineConfig((_) => ({
   resolve: {
     tsconfigPaths: true,

@@ -138,6 +138,35 @@ pnpm dlx wrangler d1 execute vendula-bags-db --remote --command="SELECT name FRO
 ```sh
 pnpm dlx wrangler d1 execute vendula-bags-db --remote --command="SELECT * FROM d1_migrations;"
 ```
+
+
+## Deployment flow
+
+For production, deploy the Worker with wrangler deploy, and run the DB migration separately with wrangler d1 migrations apply vendula-bags-db --remote. Wrangler’s D1 docs show that migrations are versioned SQL files applied to the remote database, and CI can run them directly against remote D1.
+
+A GitHub Actions job should usually do:
+
+   - Install dependencies.
+
+   - Build the app.
+
+   - Apply remote D1 migrations.
+
+    - Deploy the Worker.
+
+Cloudflare’s CI/CD docs also note that wrangler deploy is the standard deployment command for Workers in GitHub Actions.
+If remote already has the tables
+
+If the remote DB already contains Collections, Shapes, or Designs, do not try to recreate them in a later migration. Instead, either:
+
+    keep the live schema and add only the missing users migration, or
+
+    export/back up, drop the conflicting tables, and reapply the clean migration chain.
+
+Recommended next command
+
+After you update the migration files, run:
+
 bash
 pnpm dlx wrangler d1 migrations apply vendula-bags-db --remote
 
@@ -146,6 +175,53 @@ Then verify:
 bash
 pnpm dlx wrangler d1 execute vendula-bags-db --remote --command="SELECT name FROM sqlite_schema WHERE type='table';"
 
+
+## Check validation issues
+
+Fast fix
+
+Run these in order:
+
+bash
+npx wrangler logout
+unset CLOUDFLARE_API_TOKEN
+unset CF_API_TOKEN
+npx wrangler login
+npx wrangler whoami
+
+If whoami works, try:
+
+bash
+npx wrangler deploy
+
+Wrangler docs support using either interactive login or a CLOUDFLARE_API_TOKEN environment variable for CI/CD and automation.
+If you want API-token auth
+
+Create a fresh Cloudflare API token and export it in your shell:
+
+bash
+export CLOUDFLARE_API_TOKEN="your_new_token"
+export CLOUDFLARE_ACCOUNT_ID="your_account_id"
+npx wrangler whoami
+npx wrangler deploy
+
+Make sure the token belongs to the same Cloudflare account as b39ccaeee2bfc196b30cf6b86fd59b0a, because Wrangler is trying to deploy into that account.
+Common gotchas
+
+    A token in .env is fine, but if an old token is also set in your shell, Wrangler may still pick that up.
+
+    If you recently changed accounts, clear Wrangler’s cached auth state by logging out and logging back in.
+
+    In GitHub Actions, the token must be stored as a repository secret and passed as CLOUDFLARE_API_TOKEN.
+
+Best next check
+
+Run:
+
+bash
+npx wrangler whoami
+
+----
 
 ---- 
 bash
