@@ -20,8 +20,15 @@ export async function clientLoader() {
 }
 
 export function HydrateFallback() {
-  return <div className="p-8">Loading...</div>
+  return <div className="p-3 text-info spinner-border m-5" role="status">
+  <span className="visually-hidden">Loading...</span>
+  </div>
+
 }
+
+{/* <div class="spinner-border" role="status">
+  <span class="visually-hidden">Loading...</span>
+</div> */}
 
 function parseImages(value: any): string[] {
   if (Array.isArray(value)) return Array.from(new Set(value.filter(Boolean)))
@@ -55,6 +62,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       const designs = Array.isArray(col.designs) ? col.designs : []
       const collectionImages = parseImages(col.image_urls)
       const designImages = uniq(designs.flatMap((d: any) => parseImages(d.image_urls)))
+
 
       return {
         ...col,
@@ -183,10 +191,34 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   }, [lightboxOpen, lightboxImages.length])
 
   return (
-    <main className="flex min-h-screen items-start justify-center p-8">
-      <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+    <main className="container flex min-h-screen items-start justify-center p-8">
+      <div className="tab-content" id="pills-tabContent">
+  <div className="tab-pane fade show active" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab">
+
+ 
+      <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-4">
         <aside className="col-span-1">
           <div className="sticky top-8 space-y-4">
+
+            <div className="row">
+  <div className="col-4">
+    <div className="list-group" id="list-tab" role="tablist">
+      <a className="list-group-item list-group-item-action active" id="list-home-list" data-bs-toggle="list" href="#list-home" role="tab" aria-controls="list-home">Home</a>
+      <a className="list-group-item list-group-item-action" id="list-profile-list" data-bs-toggle="list" href="#list-profile" role="tab" aria-controls="list-profile">Profile</a>
+      <a className="list-group-item list-group-item-action" id="list-messages-list" data-bs-toggle="list" href="#list-messages" role="tab" aria-controls="list-messages">Messages</a>
+      <a className="list-group-item list-group-item-action" id="list-settings-list" data-bs-toggle="list" href="#list-settings" role="tab" aria-controls="list-settings">Settings</a>
+    </div>
+  </div>
+  <div className="col-8">
+    <div className="tab-content" id="nav-tabContent">
+      <div className="tab-pane fade show active" id="list-home" role="tabpanel" aria-labelledby="list-home-list">hello.</div>
+      <div className="tab-pane fade" id="list-profile" role="tabpanel" aria-labelledby="list-profile-list">bye</div>
+      <div className="tab-pane fade" id="list-messages" role="tabpanel" aria-labelledby="list-messages-list">...</div>
+      <div className="tab-pane fade" id="list-settings" role="tabpanel" aria-labelledby="list-settings-list">...</div>
+    </div>
+  </div>
+</div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
               <input
@@ -197,6 +229,30 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               />
             </div>
 
+                        <div className="row">
+  <div className="col-4">
+    <div className="list-group" id="list-tab" role="tablist">
+      <a className="list-group-item list-group-item-action active" id="list-home-list" data-bs-toggle="list" href="#list-home" role="tab" aria-controls="list-home"
+      value={season ?? ''}
+      >
+        
+        Home</a>
+      <a className="list-group-item list-group-item-action" id="list-profile-list" data-bs-toggle="list" href="#list-profile" role="tab" aria-controls="list-profile">Profile</a>
+      <a className="list-group-item list-group-item-action" id="list-messages-list" data-bs-toggle="list" href="#list-messages" role="tab" aria-controls="list-messages">Messages</a>
+      <a className="list-group-item list-group-item-action" id="list-settings-list" data-bs-toggle="list" href="#list-settings" role="tab" aria-controls="list-settings">Settings</a>
+    </div>
+  </div>
+  <div className="col-8">
+    <div className="tab-content" id="nav-tabContent">
+      <div className="tab-pane fade show active" id="list-home" role="tabpanel" aria-labelledby="list-home-list">hello.</div>
+      <div className="tab-pane fade" id="list-profile" role="tabpanel" aria-labelledby="list-profile-list">bye</div>
+      <div className="tab-pane fade" id="list-messages" role="tabpanel" aria-labelledby="list-messages-list">...</div>
+      <div className="tab-pane fade" id="list-settings" role="tabpanel" aria-labelledby="list-settings-list">...</div>
+    </div>
+  </div>
+</div>
+       
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Filter by season</label>
               <select
@@ -206,6 +262,22 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               >
                 <option value="">All seasons</option>
                 {seasons.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Filter by series</label>
+              <select
+                value={series ?? ''}
+                onChange={(e) => setSeries(e.target.value || null)}
+                className="w-full rounded border px-3 py-2"
+              >
+                <option value="">All series</option>
+                {seriesList.map((s) => (
                   <option key={s} value={s}>
                     {s}
                   </option>
@@ -248,7 +320,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         </aside>
 
         <section className="col-span-3">
-          <h1 className="text-3xl font-bold mb-6 text-danger">Top Collections</h1>
+          <h1 className="text-3xl font-bold mb-6 text-danger">Vendula Handbag Library</h1>
 
           <div className="space-y-12">
             {years.length === 0 ? (
@@ -442,6 +514,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           </button>
         </div>
       )}
+      </div>
+        <div className="tab-pane fade" id="pills-profile" role="tabpanel" aria-labelledby="pills-profile-tab">"Hello"</div>
+  <div className="tab-pane fade" id="pills-contact" role="tabpanel" aria-labelledby="pills-contact-tab" >...</div>
+  <div className="tab-pane fade" id="pills-disabled" role="tabpanel" aria-labelledby="pills-disabled-tab" >...</div>
+</div>
     </main>
   )
 }
