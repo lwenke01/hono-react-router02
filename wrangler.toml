@@ -13,6 +13,10 @@ database_id = "47e3b618-2d95-47a6-9a4b-16f6d9197d86"
 migrations_dir = "database/drizzle"
 remote = true
 
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "vendula-design-images"
+
 [observability.logs]
 enabled = true
 

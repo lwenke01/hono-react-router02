@@ -31,7 +31,7 @@
     "hono": "^4.7.4",
     "hono-react-router-adapter": "^0.6.2",
     "isbot": "^5.1.17",
-    "motion": "^12.38.0",
+    "motion": "^12.39.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router": "^7.1.3",

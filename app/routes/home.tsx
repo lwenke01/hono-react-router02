@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import type { Route } from './+types/home'
 import { useInfiniteCollections } from './useInfiniteCollections'
 
+
 export function meta(_: Route.MetaArgs) {
   return [
     { title: 'Vendula London Handbag Library' },
@@ -214,7 +215,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Filter by series</label>
+              <label className="block text-sm font-medium mb-1 text-primary">Filter by series</label>
               <select
                 value={series ?? ''}
                 onChange={(e) => setSeries(e.target.value || null)}
@@ -248,7 +249,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         </aside>
 
         <section className="col-span-3">
-          <h1 className="text-3xl font-bold mb-6">Top Collections</h1>
+          <h1 className="text-3xl font-bold mb-6 .text-danger">Top Collections</h1>
 
           <div className="space-y-12">
             {years.length === 0 ? (
