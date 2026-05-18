@@ -6,7 +6,10 @@ import { useInfiniteCollections } from './useInfiniteCollections'
 export function meta(_: Route.MetaArgs) {
   return [
     { title: 'Vendula London Handbag Library' },
-    { name: 'description', content: 'An archives library of all seasons, designs, collections of Vendula London bags' },
+    {
+      name: 'description',
+      content: 'An archives library of all seasons, designs, collections of Vendula London bags',
+    },
   ]
 }
 
@@ -128,10 +131,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       .sort((a: any, b: any) => Number(b.release_year ?? 0) - Number(a.release_year ?? 0))
   }, [normalizedCollections, search, season, series, shape])
 
-  const { visibleItems, hasMore, isLoadingMore, loadMoreRef } = useInfiniteCollections(
-    filteredCollections,
-    50,
-  )
+  const { visibleItems, hasMore, isLoadingMore, loadMoreRef } = useInfiniteCollections(filteredCollections, 50)
 
   const groupedByYear = useMemo(() => {
     return visibleItems.reduce((acc: Record<string, any[]>, col: any) => {
@@ -248,7 +248,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         </aside>
 
         <section className="col-span-3">
-          <h1 className="text-3xl font-bold mb-6">Top Collections</h1>
+          <h1 className="text-3xl font-bold mb-6 text-danger">Top Collections</h1>
 
           <div className="space-y-12">
             {years.length === 0 ? (
@@ -296,6 +296,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                                   <img
                                     src={collectionPhoto}
                                     alt={col.name}
+                                    loading="lazy"
                                     className="object-cover h-full w-full cursor-pointer"
                                     onClick={() => openLightbox([collectionPhoto], 0)}
                                   />
@@ -326,6 +327,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                                             <img
                                               src={thumb}
                                               alt={d.name}
+                                              loading="lazy"
                                               className="h-full w-full object-cover cursor-pointer"
                                               onClick={() => openLightbox(images, 0)}
                                             />
@@ -349,6 +351,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                                                   key={idx}
                                                   src={src}
                                                   alt={`${d.name} ${idx + 1}`}
+                                                  loading="lazy"
                                                   className="h-16 w-16 object-cover rounded cursor-pointer border"
                                                   onClick={() => openLightbox(images, idx)}
                                                 />

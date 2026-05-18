@@ -11,6 +11,7 @@ import type { Route } from './+types/root'
 import stylesheet from './global.css?url'
 import { useSession, signOut } from './lib/auth-client'
 
+
 export const links: Route.LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
   {
@@ -33,10 +34,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
+         <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+        />
       </head>
       <body>
         {children}
         <ScrollRestoration />
+        
         <Scripts />
       </body>
     </html>
