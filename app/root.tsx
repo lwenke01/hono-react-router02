@@ -58,8 +58,16 @@ export default function App() {
 
   return (
     <>
+    {/* <nav className="navbar navbar-*">
+    <div>
+        <a className="navbar-brand" href="#">f
+            <img src="https://pub-af2fa0bccf8144cc980095caef793c08.r2.dev/website-images/generated-image(5).png" alt="" width="" height="" ></img>
+        </a>
+    </div>
+</nav> */}
 <nav className="navbar navbar-expand-lg fixed-top bg-danger-subtle border-bottom border-body">
-  <img src="..." className="object-fit-xxl-contain border rounded" alt="..."></img>
+  
+  {/* <img src="https://pub-af2fa0bccf8144cc980095caef793c08.r2.dev/website-images/generated-image(5).png" className="object-fit-xxl-contain border rounded" alt=""></img> */}
   <div className="container-fluid">
     <a className="navbar-brand" href="#">Navbar</a>
      <a className="navbar-brand" href="#">Navbar</a>
