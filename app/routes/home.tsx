@@ -193,6 +193,42 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   return (
 
     <main className="container flex min-h-screen items-start justify-center p-8">
+      <nav className="navbar navbar-expand-lg bg-body-tertiary">
+  <div className="container-fluid">
+    <a className="navbar-brand" href="#">Navbar</a>
+    <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span className="navbar-toggler-icon"></span>
+    </button>
+    <div className="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul className="navbar-nav me-auto mb-2 mb-lg-0">
+        <li className="nav-item">
+          <a className="nav-link active" aria-current="page" href="#">Home</a>
+        </li>
+        <li className="nav-item">
+          <a className="nav-link" href="#">Link</a>
+        </li>
+        <li className="nav-item dropdown">
+          <a className="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Dropdown
+          </a>
+          <ul className="dropdown-menu">
+            <li><a className="dropdown-item" href="#">Action</a></li>
+            <li><a className="dropdown-item" href="#">Another action</a></li>
+            <li className="dropdown-divider"></li>
+            <li><a className="dropdown-item" href="#">Something else here</a></li>
+          </ul>
+        </li>
+        <li className="nav-item">
+          <a className="nav-link disabled" aria-disabled="true">Disabled</a>
+        </li>
+      </ul>
+      <form className="d-flex" role="search">
+        <input className="form-control me-2" type="search" placeholder="Search" aria-label="Search"/>
+        <button className="btn btn-outline-success" type="submit">Search</button>
+      </form>
+    </div>
+  </div>
+</nav>
       <div className="tab-content" id="pills-tabContent">
   <div className="tab-pane fade show active" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab">
 
@@ -201,7 +237,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         <aside className="col-span-1">
           <div className="sticky top-8 space-y-4">
 
-            <div className="row">
+            {/* <div className="row">
   <div className="col-4">
     <div className="list-group" id="list-tab" role="tablist">
       <a className="list-group-item list-group-item-action active" id="list-home-list" data-bs-toggle="list" href="#list-home" role="tab" aria-controls="list-home">Home</a>
@@ -214,43 +250,67 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     <div className="tab-content" id="nav-tabContent">
       <div className="tab-pane fade show active" id="list-home" role="tabpanel" aria-labelledby="list-home-list">hello.</div>
       <div className="tab-pane fade" id="list-profile" role="tabpanel" aria-labelledby="list-profile-list">bye</div>
-      <div className="tab-pane fade" id="list-messages" role="tabpanel" aria-labelledby="list-messages-list">...</div>
-      <div className="tab-pane fade" id="list-settings" role="tabpanel" aria-labelledby="list-settings-list">...</div>
+      <div className="tab-pane fade" id="list-messages" role="tabpanel" aria-labelledby="list-messages-list">..hh.</div>
+      <div className="tab-pane fade" id="list-settings" role="tabpanel" aria-labelledby="list-settings-list">..hh.</div>
     </div>
   </div>
-</div>
-            <div>
+</div> */}
+
+{/* search box */}
+            <div id="search-box-top">
               <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search collections, designs, shapes"
-                className="w-full rounded border px-3 py-2"
+                className="w-full"
               />
             </div>
 
-                        <div className="row">
+ {/* <div className="row">
   <div className="col-4">
+     <label className="block text-sm font-medium text-gray-700 mb-1">Filter by season</label>
     <div className="list-group" id="list-tab" role="tablist">
-      <a className="list-group-item list-group-item-action active" id="list-home-list" data-bs-toggle="list" href="#list-home" role="tab" aria-controls="list-home"
-      value={season ?? ''}
-      >
-        
-        Home</a>
-      <a className="list-group-item list-group-item-action" id="list-profile-list" data-bs-toggle="list" href="#list-profile" role="tab" aria-controls="list-profile">Profile</a>
-      <a className="list-group-item list-group-item-action" id="list-messages-list" data-bs-toggle="list" href="#list-messages" role="tab" aria-controls="list-messages">Messages</a>
-      <a className="list-group-item list-group-item-action" id="list-settings-list" data-bs-toggle="list" href="#list-settings" role="tab" aria-controls="list-settings">Settings</a>
+      <a className="list-group-item list-group-item-action" id="list-home-list" data-bs-toggle="list" href="#list-home" role="tab" aria-controls="list-home">
+          
+         <button value={season ?? ''} 
+      onChange={(e) => setSeason(e.target.value || null)}
+      ></button> */}
+
+
+            
+              {/* <label className="block text-sm font-medium text-gray-700 mb-1">Filter by season</label> */}
+              {/* <button
+                value={season ?? ''}
+                onChange={(e) => setSeason(e.target.value || null)}
+                className=""
+              >
+                
+              </button>
+              
+                 {seasons.map((s) => (
+                   <a className="list-group-item list-group-item-action" id="list-profile-list" data-bs-toggle="list" href="#list-profile" role="tab" aria-controls="list-profile">
+                 {s} 
+                 </a>
+                ))}
+           </a>
+
     </div>
   </div>
   <div className="col-8">
     <div className="tab-content" id="nav-tabContent">
+       {seriesList.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
       <div className="tab-pane fade show active" id="list-home" role="tabpanel" aria-labelledby="list-home-list">hello.</div>
       <div className="tab-pane fade" id="list-profile" role="tabpanel" aria-labelledby="list-profile-list">bye</div>
       <div className="tab-pane fade" id="list-messages" role="tabpanel" aria-labelledby="list-messages-list">...</div>
       <div className="tab-pane fade" id="list-settings" role="tabpanel" aria-labelledby="list-settings-list">...</div>
     </div>
   </div>
-</div>
+</div> */}
        
 
             <div>
@@ -320,7 +380,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         </aside>
 
         <section className="col-span-3">
-          <h1 className="text-3xl font-bold mb-6 text-danger">Vendula Handbag Library</h1>
+          <h1 className="text-3xl font-bold mb-6 d-grid gap-3 text-danger">Vendula Handbag Library</h1>
 
           <div className="space-y-12">
             {years.length === 0 ? (
@@ -343,28 +403,19 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                           key={col.id}
                           className="border rounded-lg bg-white shadow-sm overflow-hidden"
                         >
-                          <div className="p-4 border-b">
+                          <div id="collection-section" className="p-4 border-b bg-danger-subtle">
                             <div className="flex items-start justify-between gap-4">
                               <div>
+                                   <p className="fw-medium fs-6">
+                                {col.season || 'Unknown'} 
+                                </p>
                                 <h3 className="text-xl font-semibold">{col.name}</h3>
                                 <p className="text-sm text-gray-600">
-                                  Season: {col.season || 'N/A'} | Series: {col.series || 'N/A'}
+                                {col.season || 'Unknown'} | {col.series || 'N/A'}
                                 </p>
-                              </div>
-
-                              <Link
-                                to={`/collections/${col.id}`}
-                                className="text-sm text-blue-600 hover:underline"
-                              >
-                                View collection
-                              </Link>
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-6 gap-5 p-5">
-                            {showCollectionImage && (
-                              <div className="md:col-span-2">
-                                <div className="h-64 w-full bg-gray-100 flex items-center justify-center overflow-hidden rounded">
+                                  {showCollectionImage && (
+                              <div className="d-flex flex-row justify-content-start mb-3 flex-wrap ">
+                                <div className="h-55 mw-50 bg-gray-100 flex items-center justify-center overflow-hidden rounded">
                                   <img
                                     src={collectionPhoto}
                                     alt={col.name}
@@ -372,16 +423,34 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                                     className="object-cover h-full w-full cursor-pointer"
                                     onClick={() => openLightbox([collectionPhoto], 0)}
                                   />
-                                </div>
-                              </div>
-                            )}
-
-                            <div className={showCollectionImage ? 'md:col-span-4' : 'md:col-span-6'}>
-                              <p className="text-sm text-gray-700 mb-4">
+                                  
+                                </div> 
+                                <div className="p-2">
+                                     <p className="text-sm text-gray-700 mb-4">
                                 {col.description || 'No description'}
                               </p>
+                                  </div>   
+                                
+                              </div>
+                            )}
+                              </div>
 
-                              <h4 className="font-medium mb-3 text-lg">Designs</h4>
+                              {/* <Link
+                                to={`/collections/${col.id}`}
+                                className="text-sm text-blue-600 hover:underline"
+                              >
+                                View collection
+                              </Link> */}
+                            </div>
+                          </div>
+
+                          <div id="design-section" className="d-flex flex-column mb-3  p-3">
+                      
+
+                            <div className='md:col-span-6'>
+                         
+
+                              {/* <h4 className="font-medium mb-3 text-lg">Designs</h4> */}
 
                               {designs.length > 0 ? (
                                 <div className="space-y-4">
@@ -394,7 +463,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                                         key={d.id}
                                         className="flex gap-4 items-start border rounded-lg p-4"
                                       >
-                                        <div className="h-28 w-28 bg-gray-100 rounded overflow-hidden flex items-center justify-center shrink-0">
+                                        <div className="h-32 w-32 bg-gray-100 rounded overflow-hidden flex items-center justify-center shrink-0">
                                           {thumb ? (
                                             <img
                                               src={thumb}

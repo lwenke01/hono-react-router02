@@ -9,7 +9,7 @@ import {
 } from 'react-router'
 import type { Route } from './+types/root'
 import stylesheet from './global.css?url'
-import { useSession, signOut } from './lib/auth-client'
+// import { useSession, signOut } from './lib/auth-client'
 
 
 export const links: Route.LinksFunction = () => [
@@ -54,12 +54,79 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  const { data: session, isPending } = useSession()
+  // const { data: session, isPending } = useSession()
 
   return (
     <>
-
-      <header className=" flex items-center justify-center px-4 py-8">
+<nav className="navbar navbar-expand-lg  bg-danger-subtle border-bottom border-body">
+  <div className="container-fluid">
+    <a className="navbar-brand" href="#">Navbar</a>
+     <a className="navbar-brand" href="#">Navbar</a>
+    <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="true" aria-label="Toggle navigation">
+      <span className="navbar-toggler-icon"></span>
+    </button>
+    <div className="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul className="navbar-nav me-auto mb-2 mb-lg-0">
+        <li className="nav-item">
+          <a className="nav-link active" aria-current="page" href="#">hello</a>
+        </li>
+        <li className="nav-item">
+          <a className="nav-link" href="#">Link</a>
+        </li>
+        <li className="nav-item dropdown">
+          <a className="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Dropdown
+          </a>
+          <ul className="dropdown-menu">
+            <li><a className="dropdown-item" href="#">Action</a></li>
+            <li><a className="dropdown-item" href="#">Another action</a></li>
+            <li className="dropdown-divider"></li>
+            <li><a className="dropdown-item" href="#">Something else here</a></li>
+          </ul>
+        </li>
+        <li className="nav-item">
+          <a className="nav-link disabled" aria-disabled="true">Disabled</a>
+        </li>
+      </ul>
+      <form className="d-flex" role="search">
+        <input className="form-control me-2" type="search" placeholder="Search" aria-label="Search"/>
+        <button className="btn btn-outline-success" type="submit">Search</button>
+      </form>
+    </div>
+  </div>
+</nav>
+      <header className="container d-flex px-4 py-8">
+        <nav className="navbar navbar-expand-lg bg-body-tertiary">
+  <div className="container-fluid">
+    <a className="navbar-brand" href="#">Navbar1</a>
+    <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+      <span className="navbar-toggler-icon"></span>
+    </button>
+    <div className="collapse navbar-collapse" id="navbarNavDropdown">
+      <ul className="navbar-nav">
+        <li className="nav-item">
+          <a className="nav-link active" aria-current="page" href="#">Home</a>
+        </li>
+        <li className="nav-item">
+          <a className="nav-link" href="#">Features</a>
+        </li>
+        <li className="nav-item">
+          <a className="nav-link" href="#">Pricing</a>
+        </li>
+        <li className="nav-item dropdown">
+          <a className="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Dropdown link
+          </a>
+          <ul className="dropdown-menu">
+            <li><a className="dropdown-item" href="#">Action</a></li>
+            <li><a className="dropdown-item" href="#">Another action</a></li>
+            <li><a className="dropdown-item" href="#">Something else here</a></li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
         {/* {isPending ? null : session ? (
           <div className="flex items-center gap-4">
             <span className="text-sm">{session.user.email}</span>
@@ -78,14 +145,16 @@ export default function App() {
             Sign In
           </Link>
         )} */}
-           <nav>
+    
+           {/* <nav>
   <div className="nav nav-tabs" id="nav-tab" role="tablist">
     <button className="nav-link active" id="nav-home-tab" data-bs-toggle="tab" data-bs-target="#nav-home" type="button" role="tab" aria-controls="nav-home" aria-selected="true">Home</button>
     <button className="nav-link" id="nav-profile-tab" data-bs-toggle="tab" data-bs-target="#nav-profile" type="button" role="tab" aria-controls="nav-profile" aria-selected="false">Profile</button>
     <button className="nav-link" id="nav-contact-tab" data-bs-toggle="tab" data-bs-target="#nav-contact" type="button" role="tab" aria-controls="nav-contact" aria-selected="false">Contact</button>
     <button className="nav-link" id="nav-disabled-tab" data-bs-toggle="tab" data-bs-target="#nav-disabled" type="button" role="tab" aria-controls="nav-disabled" aria-selected="false" disabled>Disabled</button>
   </div>
-</nav>
+</nav> */}
+{/* Vendula Handbag Library */}
       </header>
       <main>
         <Outlet />
