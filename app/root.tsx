@@ -8,7 +8,7 @@ import {
   ScrollRestoration,
 } from 'react-router'
 import type { Route } from './+types/root'
-import stylesheet from './global.css?url'
+// import stylesheet from './global.css?url'
 import { useSession, signOut } from './lib/auth-client'
 
 
@@ -27,7 +27,7 @@ export const links: Route.LinksFunction = () => [
     rel: 'stylesheet',
     href: 'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap',
   },
-  { rel: 'stylesheet', href: stylesheet },
+  // { rel: 'stylesheet', href: stylesheet },
 ]
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -44,6 +44,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         />
  
       </head>
+
       <body>
         {children}
         <ScrollRestoration />
@@ -113,8 +114,8 @@ export default function App() {
     </div>
   </div>
 </nav> */}
-      <header className="container d-flex px-4 py-8">
-        xx
+      <header className="d-flex justify-content-end px-4 py-8">
+       
    
         {isPending ? null : session ? (
           <div className="flex items-center gap-4">

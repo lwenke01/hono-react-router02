@@ -16,6 +16,9 @@ export const designs = sqliteTable('Designs', {
   price: real('price'),
   releaseYear: integer('release_year'),
   categories: text('categories'),
+  shape_name_overwrite: text('shape_name_overwrite'),
+  shape_measurements_overwrite: text('shape_measurements_overwrite'),
+
 })
 
 export type Design = InferSelectModel<typeof designs>

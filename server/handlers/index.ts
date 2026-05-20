@@ -38,11 +38,11 @@ export const setHandlers = (app: Hono<HonoENV>) => {
   apiHandler.get('/collections', ...vendulaCollectionsGet)
   apiHandler.get('/collections/:id', ...vendulaCollectionById)
   apiHandler.post('/collections', ...vendulaCollectionsPost)
-  apiHandler.put('/collections/:id', ...vendulaCollectionsPut)
+  apiHandler.put('/admin/collections/:id', ...vendulaCollectionsPut)
 
   apiHandler.get('/designs', ...vendulaDesignsGet)
   apiHandler.post('/designs', ...vendulaDesignsPost)
-  apiHandler.put('/designs/:id', ...vendulaDesignsPut)
+  apiHandler.put('/admin/designs/:id', ...vendulaDesignsPut)
 
   apiHandler.get('/shapes', ...vendulaShapesGet)
   apiHandler.post('/shapes', ...vendulaShapesPost)

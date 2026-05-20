@@ -74,6 +74,8 @@ export const vendulaCollectionsGet = F.createHandlers(async (c) => {
               'price', d.price,
               'release_year', d.release_year,
               'categories', d.categories,
+              'shape_name_overwrite',d.shape_name_overwrite,
+              'shape_measurements_overwrite',d.shape_measurements_overwrite,
               'shape_name', s.name,
               'measurements', s.measurements,
               'shape_category', s.category,

@@ -275,7 +275,7 @@ function AdminPanel({
                           className="form-control"
                           value={curCol.season ?? ''}
                           onChange={(e) => changeCol('season', e.target.value)}
-                          placeholder="e.g. Spring/Summer 2024"
+                          placeholder="e.g. SS24 (Spring/Summer 2024)"
                         />
                       </div>
 
@@ -960,7 +960,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                               </div>
 
                               <Link
-                                to={`/collections/${col.id}`}
+                                to={`/collection/${col.id}`}
                                 className="btn btn-sm btn-outline-secondary flex-shrink-0"
                               >
                                 View
