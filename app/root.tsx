@@ -9,7 +9,7 @@ import {
 } from 'react-router'
 import type { Route } from './+types/root'
 import stylesheet from './global.css?url'
-// import { useSession, signOut } from './lib/auth-client'
+import { useSession, signOut } from './lib/auth-client'
 
 
 export const links: Route.LinksFunction = () => [
@@ -54,7 +54,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  // const { data: session, isPending } = useSession()
+  const { data: session, isPending } = useSession()
 
   return (
     <>
@@ -65,10 +65,10 @@ export default function App() {
         </a>
     </div>
 </nav> */}
-<nav className="navbar navbar-expand-lg fixed-top bg-danger-subtle border-bottom border-body">
+{/* <nav className="navbar navbar-expand-lg fixed-top bg-danger-subtle border-bottom border-body"> */}
   
   {/* <img src="https://pub-af2fa0bccf8144cc980095caef793c08.r2.dev/website-images/generated-image(5).png" className="object-fit-xxl-contain border rounded" alt=""></img> */}
-  <div className="container-fluid">
+  {/* <div className="container-fluid">
     <a className="navbar-brand" href="#">Navbar</a>
      <a className="navbar-brand" href="#">Navbar</a>
     <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="true" aria-label="Toggle navigation">
@@ -103,11 +103,11 @@ export default function App() {
       </form>
     </div>
   </div>
-</nav>
+</nav> */}
       <header className="container d-flex px-4 py-8">
         xx
    
-        {/* {isPending ? null : session ? (
+        {isPending ? null : session ? (
           <div className="flex items-center gap-4">
             <span className="text-sm">{session.user.email}</span>
             <button
@@ -124,7 +124,7 @@ export default function App() {
           >
             Sign In
           </Link>
-        )} */}
+        )}
     
            {/* <nav>
   <div className="nav nav-tabs" id="nav-tab" role="tablist">

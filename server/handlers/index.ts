@@ -12,7 +12,7 @@ import {
   vendulaShapesPost,
 } from './vendula.handler'
 
-const apiHandler = new Hono()
+const apiHandler = new Hono<HonoENV>()
 
 const _routes = apiHandler.get('/check', (c) => {
   return c.json({ status: 'ok' }, 200)
@@ -20,7 +20,7 @@ const _routes = apiHandler.get('/check', (c) => {
 
 export type RPC = typeof _routes
 
-export const setHandlers = (app: Hono) => {
+export const setHandlers = (app: Hono<HonoENV>) => {
   app.on(['POST', 'GET'], '/api/auth/**', (c) => {
     const auth = c.get('auth')
     return auth.handler(c.req.raw)
