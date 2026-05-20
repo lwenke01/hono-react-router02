@@ -43,13 +43,13 @@ This repository also includes a lighter version under the [`mini`](https://githu
 pnpm install
 ```
 
-### 2. Generate types
+### 2. Generate types - when create new routes
 
 ```bash
 pnpm typegen
 ```
 
-### 3. Set up environment variables
+### 3. Set up environment variables - only for setup
 
 ```bash
 cp .dev.vars.sample .dev.vars
@@ -57,7 +57,7 @@ cp .dev.vars.sample .dev.vars
 
 Then edit `.dev.vars` and set your `BETTER_AUTH_SECRET` (at least 32 characters).
 
-### 4. Run initial database migration
+### 4. Run initial database migration - only for new tables
 
 ```bash
 pnpm db:generate
