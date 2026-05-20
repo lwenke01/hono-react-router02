@@ -1,13 +1,21 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router'
+
 import { useSession } from '../lib/auth-client'
+
+
 
 export default function DashboardPage() {
   const { data: session, isPending } = useSession()
+    const navigate = useNavigate()
 
   if (isPending) {
     return <div className="p-4">Loading...</div>
   }
 
   if (!session) {
+    
+      navigate('/')
     return <div className="p-4">Not authenticated</div>
   }
 

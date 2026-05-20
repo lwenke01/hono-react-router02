@@ -19,6 +19,10 @@ export const links: Route.LinksFunction = () => [
     href: 'https://fonts.gstatic.com',
     crossOrigin: 'anonymous',
   },
+ { 
+  rel:'preconnect',
+   href:'https://challenges.cloudflare.com',
+ },
   {
     rel: 'stylesheet',
     href: 'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap',
@@ -45,6 +49,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <ScrollRestoration />
         
         <Scripts />
+        <script
+  src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+  async
+  defer
+/>
           <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" defer />
           <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" defer />
 
@@ -135,6 +144,7 @@ export default function App() {
   </div>
 </nav> */}
 {/* Vendula Handbag Library */}
+
       </header>
       <main>
         <Outlet />

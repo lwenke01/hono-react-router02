@@ -25,3 +25,4 @@ enabled = true
 [vars]
 DEV = "true"
 BETTER_AUTH_URL = "http://localhost:5173"
+

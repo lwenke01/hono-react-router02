@@ -7,4 +7,5 @@ export default [
   route('/sign-up', 'routes/sign-up.tsx'),
   // Auth required routes (verified on Hono server)
   route('/dashboard', 'routes/dashboard.tsx'),
+    route('/admin', 'routes/admin.tsx'),
 ] satisfies RouteConfig

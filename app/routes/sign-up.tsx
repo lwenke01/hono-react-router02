@@ -82,6 +82,15 @@ export default function SignUpPage() {
             />
           </div>
 
+          
+{/* <div className="cf-turnstile" data-sitekey="0x4AAAAAADTIBJtI2F2tJMvF"></div>
+<div
+  className="cf-turnstile"
+  data-sitekey="0x4AAAAAADTIBJtI2F2tJMvF"
+  data-theme="light"
+  data-size="normal"
+  data-callback="onSuccess"
+></div> */}
           <button
             type="submit"
             disabled={loading}
