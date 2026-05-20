@@ -17,6 +17,7 @@ remote = true
 [[r2_buckets]]
 binding = "R2"
 bucket_name = "vendula-design-images"
+remote = true
 
 [observability.logs]
 enabled = true

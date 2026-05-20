@@ -64,6 +64,10 @@ pnpm db:generate
 pnpm db:migrate
 ```
 
+OR for Wrangler:
+```bash
+npx wrangler d1 migrations apply --remote DB
+```
 ### 5. Start the development server (with HMR)
 
 ```bash
