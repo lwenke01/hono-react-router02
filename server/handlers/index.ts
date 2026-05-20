@@ -10,6 +10,7 @@ import {
   vendulaDesignsPut,
   vendulaShapesGet,
   vendulaShapesPost,
+  vendulaShapesPut,
 } from './vendula.handler'
 
 const apiHandler = new Hono<HonoENV>()
@@ -46,7 +47,9 @@ export const setHandlers = (app: Hono<HonoENV>) => {
 
   apiHandler.get('/shapes', ...vendulaShapesGet)
   apiHandler.post('/shapes', ...vendulaShapesPost)
+  apiHandler.post('/shapes', ...vendulaShapesPut)
 
+  vendulaShapesPut
   app.route('/api', apiHandler)
   return app
 }

@@ -91,7 +91,8 @@ export const vendulaCollectionsGet = F.createHandlers(async (c) => {
       ) AS designs
     FROM Collections AS c
     ${whereClause}
-    ORDER BY COALESCE(c.release_year, 0) DESC, c.id DESC
+  
+    ORDER BY COALESCE(c.release_year, 0) DESC, c.season DESC
     LIMIT ${limit}
   `
 
@@ -154,7 +155,11 @@ export const vendulaDesignsGet = F.createHandlers(async (c) => {
     FROM Designs D
     LEFT JOIN Collections C ON C.id = D.collection_id
     LEFT JOIN Shapes S ON S.id = D.shape_id
-    ORDER BY COALESCE(C.release_year, D.release_year, 0) DESC, D.id DESC
+   ORDER BY
+  COALESCE(C.release_year, C.season, 0) DESC,
+  CASE WHEN C.season IS NULL THEN 1 ELSE 0 END,
+  C.season DESC,
+  D.name ASC;
   `).all()
 
   return c.json(
@@ -165,11 +170,11 @@ export const vendulaDesignsGet = F.createHandlers(async (c) => {
 })
 
 export const vendulaDesignsPost = F.createHandlers(async (c) => {
-  const { collection_id, shape_id, name, image_urls, price, release_year, categories, description } =
+  const { collection_id, shape_id,description, image_urls, price, release_year, categories,shape_name_overwrite,shape_measurements_overwrite } =
     await c.req.json()
 
   await c.env.DB.prepare(
-    'INSERT INTO Designs (collection_id, shape_id, name, description, image_urls, price, release_year, categories) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    'INSERT INTO Designs (collection_id, shape_id, name, description, image_urls, price, release_year, categories,shape_name_overwrite,shape_measurements_overwrite) VALUES (?, ?, ?, ?, ?, ?, ?, ?,?,?)'
   )
     .bind(
       collection_id,
@@ -188,11 +193,11 @@ export const vendulaDesignsPost = F.createHandlers(async (c) => {
 
 export const vendulaDesignsPut = F.createHandlers(async (c) => {
   const id = c.req.param('id')
-  const { collection_id, shape_id, name, image_urls, price, release_year, categories, description } =
+  const { collection_id, shape_id, name, description, image_urls, price, release_year, categories,shape_name_overwrite,shape_measurements_overwrite } =
     await c.req.json()
 
   await c.env.DB.prepare(
-    'UPDATE Designs SET collection_id=?, shape_id=?, name=?, description=?, image_urls=?, price=?, release_year=?, categories=? WHERE id=?'
+    'UPDATE Designs SET collection_id=?, shape_id=?, name=?, description=?, image_urls=?, price=?, release_year=?, categories=?,shape_name_overwrite?,shape_measurements_overwrite WHERE id=?'
   )
     .bind(
       collection_id,
@@ -203,6 +208,9 @@ export const vendulaDesignsPut = F.createHandlers(async (c) => {
       price,
       release_year,
       JSON.stringify(categories ?? []),
+      shape_name_overwrite ?? null,
+      shape_measurements_overwrite ?? null,
+
       id
     )
     .run()
@@ -211,19 +219,41 @@ export const vendulaDesignsPut = F.createHandlers(async (c) => {
 })
 
 export const vendulaShapesGet = F.createHandlers(async (c) => {
-  const { results } = await c.env.DB.prepare('SELECT * FROM Shapes ORDER BY id DESC').all()
+  const { results } = await c.env.DB.prepare('SELECT * FROM Shapes ORDER BY name DESC').all()
   return c.json(results.map((shape: any) => ({ ...shape, category: safeJson(shape.category) })))
 })
 
 export const vendulaShapesPost = F.createHandlers(async (c) => {
-  const { name, measurements, category } = await c.req.json()
+  const { name, measurements, category,name_friendly,size,description } = await c.req.json()
   const categoryToStore = Array.isArray(category) ? JSON.stringify(category) : (category ?? '[]')
 
-  await c.env.DB.prepare('INSERT INTO Shapes (name, measurements, category) VALUES (?, ?, ?)')
-    .bind(name, measurements, categoryToStore)
+  await c.env.DB.prepare('INSERT INTO Shapes (name, measurements, category, name_friendly,size,description) VALUES (?, ?, ?,?,?,?)')
+    .bind(name, measurements, categoryToStore,name_friendly,size,description)
     .run()
 
   return c.json({ success: true }, 201)
+})
+
+export const vendulaShapesPut = F.createHandlers(async (c) => {
+  const id = c.req.param('id')
+  const { name, measurements, category,name_friendly,size,description } =
+    await c.req.json()
+
+  await c.env.DB.prepare(
+    'UPDATE Shapes SET name=?, measurements=?,category=?, name_friendly=?,size=?, description=? WHERE id=?'
+  )
+    .bind(
+      name,
+      measurements ?? null,
+      JSON.stringify(category ?? []),
+      name_friendly ?? null,
+      size ?? null,
+      description ?? null,
+      id
+    )
+    .run()
+
+  return c.json({ success: true })
 })
 
 export const vendulaCollectionsPost = F.createHandlers(async (c) => {
