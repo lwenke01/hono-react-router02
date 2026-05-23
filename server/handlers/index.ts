@@ -41,6 +41,9 @@ export const setHandlers = (app: Hono<HonoENV>) => {
   apiHandler.post('/collections', ...vendulaCollectionsPost)
   apiHandler.put('/admin/collections/:id', ...vendulaCollectionsPut)
 
+     //apiHandler.get('/stockists', ...vendulaCollectionsGet)
+  // apiHandler.get('/stockists/form', ...vendulaCollectionsGet)
+
   apiHandler.get('/designs', ...vendulaDesignsGet)
   apiHandler.post('/designs', ...vendulaDesignsPost)
   apiHandler.put('/admin/designs/:id', ...vendulaDesignsPut)

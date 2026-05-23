@@ -2,8 +2,13 @@ packages:
   - "."
 
 allowBuilds:
+  es5-ext: false
   esbuild: true
   sharp: true
   unrs-resolver: true
   workerd: true
 
+minimumReleaseAgeExclude:
+  - '@cloudflare/vitest-pool-workers@0.16.9'
+  - miniflare@4.20260521.0
+  - wrangler@4.94.0
